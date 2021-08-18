@@ -1,5 +1,7 @@
 # dlox
 
+![https://pub.dev/packages/dlox](https://img.shields.io/pub/v/dlox?include_prereleases) ![https://www.gnu.org/licenses/gpl-3.0.en.html](https://img.shields.io/badge/license-GPLv3-blue)
+
 An implementation of the Lox language in Dart.
 
 Lox is a didactic language as proposed in the book [Crafting Interpreters](http://www.craftinginterpreters.com). In the first part of the book, the autor guides the reader in the process of making an interpreter for the Lox language in Java.
