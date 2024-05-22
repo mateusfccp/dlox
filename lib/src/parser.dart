@@ -102,9 +102,8 @@ final class Parser {
       } else {
         return _statement();
       }
-    } on ParseError catch (error) {
+    } on ParseError {
       _synchronize();
-      _errorHandler?.emit(error);
       return null;
     }
   }
