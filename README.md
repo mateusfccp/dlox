@@ -17,7 +17,7 @@ After I implement all the proposed code in the book (i.e. up to chapter 13), I a
 - [x] Scanner (Chapter 4)
 - [x] Basic code representation, visitors (Chapter 5)
 - [x] Expressions (Chapter 6, 7)
-- [ ] Statements (Chapter 8)
+- [x] Statements (Chapter 8)
 - [ ] Control Flow (Chapter 9)
 - [ ] Functions (Chapter 10)
 - [ ] Resolving and Binding (Chapter 11)

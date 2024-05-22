@@ -1,3 +1,5 @@
+import 'package:dlox/src/statement.dart';
+
 import 'errors.dart';
 import 'expression.dart';
 import 'token.dart';
@@ -10,11 +12,21 @@ final class Parser {
   int _current = 0;
 
   Token get _previous => _tokens[_current - 1];
+
   Token get _peek => _tokens[_current];
+
   bool get _isAtEnd => _peek.type == TokenType.endOfFile;
+
   bool get _isNotAtEnd => !_isAtEnd;
 
-  Expression parse() => _expression();
+  List<Statement> parse() {
+    final statements = <Statement>[];
+    while (!_isAtEnd) {
+      statements.add(_declaration());
+    }
+
+    return statements;
+  }
 
   bool _match(Set<TokenType> types) {
     for (final type in types) {
@@ -65,61 +77,139 @@ final class Parser {
     }
   }
 
-  Expression _expression() => _equality();
+  Expression _expression() => _assignment();
+
+  Statement _declaration() {
+    try {
+      if (_match({TokenType.varKeyword})) {
+        return _variableDeclaration();
+      } else {
+        return _statement();
+      }
+    } on ParseError catch (error) {
+      _synchronize();
+      rethrow; // TODO(mateusfccp): Fix error handling
+    }
+  }
+
+  Statement _statement() {
+    if (_match({TokenType.printKeyword})) {
+      return _printStatement();
+    } else if (_match({TokenType.leftBrace})) {
+      return BlockStatement(_block());
+    } else {
+      return _expressionStatement();
+    }
+  }
+
+  Statement _printStatement() {
+    final value = _expression();
+    _consume(TokenType.semicolon, "Expect ';' after value.");
+    return PrintStatement(value);
+  }
+
+  Statement _variableDeclaration() {
+    final name = _consume(TokenType.identifier, 'Expect variable name.');
+
+    final Expression? initializer;
+    if (_match({TokenType.equal})) {
+      initializer = _expression();
+    } else {
+      initializer = null;
+    }
+
+    _consume(TokenType.semicolon, "Expect ';' after variable declaration");
+    return VariableStatement(name, initializer);
+  }
+
+  Statement _expressionStatement() {
+    final expression = _expression();
+    _consume(TokenType.semicolon, "Expect ';' after expression");
+    return ExpressionStatement(expression);
+  }
+
+  List<Statement> _block() {
+    final statements = <Statement>[];
+
+    while (!_check(TokenType.rightBrace) && !_isAtEnd) {
+      statements.add(_declaration());
+    }
+
+    _consume(TokenType.rightBrace, "Expect '}' after block.");
+    return statements;
+  }
+
+  Expression _assignment() {
+    final expression = _equality();
+
+    if (_match({TokenType.equal})) {
+      // final equals = _previous;
+      final value = _assignment();
+
+      if (expression is VariableExpression) {
+        return AssignExpression(expression.name, value);
+      }
+
+      // TODO(mateusfccp): Fix error system
+      // _error(equals, "Invalid assignment target.");
+    }
+
+    return expression;
+  }
 
   Expression _equality() {
-    var expr = _comparison();
+    var expression = _comparison();
 
     while (_match({TokenType.bangEqual, TokenType.equalEqual})) {
       final operator = _previous;
       final right = _comparison();
-      expr = Binary(expr, operator, right);
+      expression = BinaryExpression(expression, operator, right);
     }
 
-    return expr;
+    return expression;
   }
 
   Expression _comparison() {
-    var expr = _term();
+    var expression = _term();
 
     while (_match({TokenType.greater, TokenType.greaterEqual, TokenType.less, TokenType.lessEqual})) {
       final operator = _previous;
       final right = _term();
-      expr = Binary(expr, operator, right);
+      expression = BinaryExpression(expression, operator, right);
     }
 
-    return expr;
+    return expression;
   }
 
   Expression _term() {
-    var expr = _factor();
+    var expression = _factor();
 
     while (_match({TokenType.minus, TokenType.plus})) {
       final operator = _previous;
       final right = _factor();
-      expr = Binary(expr, operator, right);
+      expression = BinaryExpression(expression, operator, right);
     }
 
-    return expr;
+    return expression;
   }
 
   Expression _factor() {
-    var expr = _unary();
+    var expression = _unary();
 
     while (_match({TokenType.slash, TokenType.star})) {
       final operator = _previous;
       final right = _unary();
-      expr = Binary(expr, operator, right);
+      expression = BinaryExpression(expression, operator, right);
     }
 
-    return expr;
+    return expression;
   }
 
   Expression _unary() {
     if (_match({TokenType.bang, TokenType.minus})) {
       final operator = _previous;
       final right = _unary();
-      return Unary(operator, right);
+      return UnaryExpression(operator, right);
     } else {
       return _primary();
     }
@@ -127,17 +217,19 @@ final class Parser {
 
   Expression _primary() {
     if (_match({TokenType.falseKeyword})) {
-      return Literal(false);
+      return LiteralExpression(false);
     } else if (_match({TokenType.trueKeyword})) {
-      return Literal(true);
+      return LiteralExpression(true);
     } else if (_match({TokenType.nilKeyword})) {
-      return Literal(null);
+      return LiteralExpression(null);
     } else if (_match({TokenType.number, TokenType.string})) {
-      return Literal(_previous.literal);
+      return LiteralExpression(_previous.literal);
+    } else if (_match({TokenType.identifier})) {
+      return VariableExpression(_previous);
     } else if (_match({TokenType.leftParen})) {
-      final expr = _expression();
+      final expression = _expression();
       _consume(TokenType.rightParen, "Expect ')' after expression.");
-      return Grouping(expr);
+      return GroupingExpression(expression);
     } else {
       throw ParseError(_peek, 'Expect expression.');
     }

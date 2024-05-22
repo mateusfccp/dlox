@@ -43,15 +43,17 @@ DloxError? run(String source) {
   final parser = Parser(tokens);
 
   try {
-    final expression = parser.parse();
+    final statements = parser.parse();
     final interpreter = Interpreter();
-    final result = interpreter.interpretAndReturnStringRepresentation(expression);
+    final result = interpreter.interpret(statements);
 
     stdout.writeln(result);
   } on DloxError catch (e) {
     stderr.writeln(error(e));
     return e;
   }
+
+  return null;
 }
 
 String error(DloxError error) {

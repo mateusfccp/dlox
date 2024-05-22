@@ -5,14 +5,28 @@ abstract interface class Expression {
 }
 
 abstract interface class ExpressionVisitor<R> {
-  R visitBinaryExpression(Binary expression);
-  R visitGroupingExpression(Grouping expression);
-  R visitLiteralExpression(Literal expression);
-  R visitUnaryExpression(Unary expression);
+  R visitAssignExpression(AssignExpression expression);
+  R visitBinaryExpression(BinaryExpression expression);
+  R visitGroupingExpression(GroupingExpression expression);
+  R visitLiteralExpression(LiteralExpression expression);
+  R visitUnaryExpression(UnaryExpression expression);
+  R visitVariableExpression(VariableExpression expression);
 }
 
-final class Binary implements Expression {
-  const Binary(this.left, this.operator, this.right);
+final class AssignExpression implements Expression {
+  const AssignExpression(this.name, this.value);
+
+  final Token name;
+  final Expression value;
+
+  @override
+  R accept<R>(ExpressionVisitor<R> visitor) {
+    return visitor.visitAssignExpression(this);
+  }
+}
+
+final class BinaryExpression implements Expression {
+  const BinaryExpression(this.left, this.operator, this.right);
 
   final Expression left;
   final Token operator;
@@ -24,8 +38,8 @@ final class Binary implements Expression {
   }
 }
 
-final class Grouping implements Expression {
-  const Grouping(this.expression);
+final class GroupingExpression implements Expression {
+  const GroupingExpression(this.expression);
 
   final Expression expression;
 
@@ -35,8 +49,8 @@ final class Grouping implements Expression {
   }
 }
 
-final class Literal implements Expression {
-  const Literal(this.value);
+final class LiteralExpression implements Expression {
+  const LiteralExpression(this.value);
 
   final Object? value;
 
@@ -46,8 +60,8 @@ final class Literal implements Expression {
   }
 }
 
-final class Unary implements Expression {
-  const Unary(this.operator, this.right);
+final class UnaryExpression implements Expression {
+  const UnaryExpression(this.operator, this.right);
 
   final Token operator;
   final Expression right;
@@ -55,5 +69,16 @@ final class Unary implements Expression {
   @override
   R accept<R>(ExpressionVisitor<R> visitor) {
     return visitor.visitUnaryExpression(this);
+  }
+}
+
+final class VariableExpression implements Expression {
+  const VariableExpression(this.name);
+
+  final Token name;
+
+  @override
+  R accept<R>(ExpressionVisitor<R> visitor) {
+    return visitor.visitVariableExpression(this);
   }
 }

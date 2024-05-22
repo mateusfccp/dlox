@@ -2,7 +2,8 @@ import 'package:meta/meta.dart';
 
 import 'token_type.dart';
 
-@immutable final class Token {
+@immutable
+final class Token {
   const Token({
     required this.type,
     required this.lexeme,

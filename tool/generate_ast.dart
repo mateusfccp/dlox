@@ -11,30 +11,52 @@ void main(List<String> args) {
     final outputDir = args.first;
     _defineAst(
       outputDir,
-      "Expr",
+      'Expression',
       [
-        "Binary   : Expr left, Token operator, Expr right",
-        "Grouping : Expr expression",
-        "Literal  : Object? value",
-        "Unary    : Token operator, Expr right",
+        'Assign   : Token name, Expression value',
+        'Binary   : Expression left, Token operator, Expression right',
+        'Grouping : Expression expression',
+        'Literal  : Object? value',
+        'Unary    : Token operator, Expression right',
+        'Variable : Token name',
       ],
+      ['token.dart'],
+    );
+
+    _defineAst(
+      outputDir,
+      'Statement',
+      [
+        'Block      : List<Statement> statements',
+        'Expression : Expression expression',
+        'Print      : Expression expression',
+        'Variable   : Token name, Expression? initializer',
+      ],
+      ['expression.dart', 'statement.dart', 'token.dart'],
     );
   }
 }
 
-void _defineAst(String outputDir, String baseName, List<String> types) {
+void _defineAst(
+  String outputDir,
+  String baseName,
+  List<String> types, [
+  List<String> imports = const [],
+]) {
   final filename = ReCase(baseName).snakeCase;
   final path = '$outputDir/$filename.dart';
   final file = File(path);
   file.createSync(recursive: true);
 
+  // Imports
+  final importsString = imports.map((import) => "import '$import';").join('\n');
+
   // Base class
   final baseClassString = _generateClass(
     className: baseName,
     abstract: true,
+    interface: true,
     content: '''
-    const $baseName._();
-    
     R accept<R>(${baseName}Visitor<R> visitor);
     ''',
   );
@@ -43,13 +65,14 @@ void _defineAst(String outputDir, String baseName, List<String> types) {
 
   // AST classes
   final astClassesString = types.map((type) {
-    final className = type.split(':').first.trim();
+    final baseClassName = type.split(':').first.trim();
+    final className = '$baseClassName$baseName';
     final fields = type.split(':').last.trim();
     return _defineType(baseName, className, fields);
   }).join('\n');
 
   final fileContent = '''
-      import 'token.dart';
+      $importsString
       
       $baseClassString
       $visitorInterfaceString
@@ -73,7 +96,7 @@ String _defineType(String baseName, String className, String fieldList) {
   final acceptMethod = '''
   @override
   R accept<R>(${baseName}Visitor<R> visitor) {
-    return visitor.visit$className$baseName(this);
+    return visitor.visit$className(this);
   }
   ''';
 
@@ -85,18 +108,25 @@ String _defineType(String baseName, String className, String fieldList) {
   $acceptMethod
   ''';
 
-  return _generateClass(className: className, content: content, implementsClass: baseName);
+  return _generateClass(
+    final_: true,
+    className: className,
+    content: content,
+    implementsClass: baseName,
+  );
 }
 
 String _defineVisitor(String baseName, List<String> types) {
   final methodsString = types.map((type) {
-    final typeName = type.split(':').first.trim();
-    return 'R visit$typeName$baseName($typeName ${baseName.toLowerCase()});';
+    final baseTypeName = type.split(':').first.trim();
+    final typeName = '$baseTypeName$baseName';
+    return 'R visit$baseTypeName$baseName($typeName ${baseName.toLowerCase()});';
   }).join('\n');
 
   return _generateClass(
     className: '${baseName}Visitor',
     abstract: true,
+    interface: true,
     generics: ['R'],
     content: methodsString,
   );
@@ -105,19 +135,25 @@ String _defineVisitor(String baseName, List<String> types) {
 String _generateClass({
   required String className,
   String content = '',
+  bool final_ = false,
   bool abstract = false,
+  bool interface = false,
   String? extendsClass,
   String? implementsClass,
   List<String>? generics,
 }) {
+  assert(final_ != abstract && final_ != interface);
+
   const classTemplate = '''
-  {abstract} class {className}{generics} {extends} {implements} {
+  {final} {abstract} {interface} class {className}{generics} {extends} {implements} {
     {content}
   }
   ''';
 
   return classTemplate
+      .replaceAll('{final}', final_ ? 'final' : '')
       .replaceAll('{abstract}', abstract ? 'abstract' : '')
+      .replaceAll('{interface}', interface ? 'interface' : '')
       .replaceAll('{className}', className)
       .replaceAll('{generics}', generics == null || generics.isEmpty ? '' : '<${generics.join(', ')}>')
       .replaceAll('{extends}', extendsClass == null ? '' : 'extends $extendsClass')

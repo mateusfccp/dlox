@@ -1,14 +1,23 @@
+import 'dart:io';
+
+import 'environment.dart';
 import 'errors.dart';
 import 'expression.dart';
+import 'statement.dart';
 import 'token.dart';
 import 'token_type.dart';
 
-final class Interpreter implements ExpressionVisitor<Object?> {
-  Object? interpret(Expression expression) => _evaluate(expression);
+final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<void> {
+  Environment _environment = Environment();
 
-  String interpretAndReturnStringRepresentation(Expression expr) {
-    final value = _evaluate(expr);
-    return _stringify(value);
+  Object? interpret(List<Statement> statements) {
+    // try {
+    for (final statement in statements) {
+      _execute(statement);
+    }
+    // } catch {
+    //   DloxError();
+    // }
   }
 
   String _stringify(Object? value) {
@@ -27,7 +36,7 @@ final class Interpreter implements ExpressionVisitor<Object?> {
   }
 
   @override
-  Object? visitBinaryExpression(Binary expression) {
+  Object? visitBinaryExpression(BinaryExpression expression) {
     final left = _evaluate(expression.left);
     final right = _evaluate(expression.right);
 
@@ -69,13 +78,13 @@ final class Interpreter implements ExpressionVisitor<Object?> {
   }
 
   @override
-  Object? visitGroupingExpression(Grouping expression) => _evaluate(expression.expression);
+  Object? visitGroupingExpression(GroupingExpression expression) => _evaluate(expression.expression);
 
   @override
-  Object? visitLiteralExpression(Literal expression) => expression.value;
+  Object? visitLiteralExpression(LiteralExpression expression) => expression.value;
 
   @override
-  Object? visitUnaryExpression(Unary expression) {
+  Object? visitUnaryExpression(UnaryExpression expression) {
     final right = _evaluate(expression.right);
 
     switch (expression.operator.type) {
@@ -89,7 +98,62 @@ final class Interpreter implements ExpressionVisitor<Object?> {
     }
   }
 
+  @override
+  Object? visitVariableExpression(VariableExpression expression) => _environment.get(expression.name);
+
   Object? _evaluate(Expression expression) => expression.accept(this);
+
+  void _execute(Statement statement) => statement.accept(this);
+
+  void _executeBlock(List<Statement> statements, Environment environment) {
+    final previous = _environment;
+
+    try {
+      _environment = environment;
+
+      for (final statement in statements) {
+        _execute(statement);
+      }
+    } finally {
+      _environment = previous;
+    }
+  }
+
+  @override
+  void visitBlockStatement(BlockStatement statement) {
+    _executeBlock(statement.statements, Environment(enclosing: _environment));
+  }
+
+  @override
+  void visitExpressionStatement(ExpressionStatement statement) {
+    _evaluate(statement.expression);
+  }
+
+  @override
+  void visitPrintStatement(PrintStatement statement) {
+    final value = _evaluate(statement.expression);
+    stdout.writeln(_stringify(value));
+  }
+
+  @override
+  void visitVariableStatement(VariableStatement statement) {
+    final Object? value;
+
+    if (statement.initializer case final initializer?) {
+      value = _evaluate(initializer);
+    } else {
+      value = null;
+    }
+
+    _environment.define(statement.name.lexeme, value);
+  }
+
+  @override
+  Object? visitAssignExpression(AssignExpression expression) {
+    final value = _evaluate(expression.value);
+    _environment.assign(expression.name, value);
+    return value;
+  }
 
   bool _isTruthy(Object? value) {
     return switch (value) {
