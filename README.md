@@ -34,3 +34,12 @@ After I implement all the proposed code in the book (i.e. up to chapter 13), I a
 - [ ] Handle division by zero (Chapter 7, challenge 3)
 - [ ] Support REPL after it was removed (Chapter 8, challenge 1)
 - [ ] `break` keyword for loops (Chapter 9, challenge 3)
+
+### Intended features not proposed by the book
+
+- [ ] `unless` control flow (syntax sugar)
+- [ ] `do-while` control flow (syntax sugar) 
+
+## Other intended improvements
+
+- [ ] Use Dart macros to generate AST
