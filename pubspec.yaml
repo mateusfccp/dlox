@@ -1,17 +1,17 @@
 name: dlox
 description: An implementation of the Lox language in Dart.
-version: 0.0.1
+version: 0.0.2
 repository: https://github.com/mateusfccp/dlox
 
 environment:
-  sdk: ">=2.13.0 <3.0.0"
-
-dev_dependencies:
-  lints: ^1.0.1
-  test: ^1.17.0
+  sdk: ">=3.3.0 <4.0.0"
 
 dependencies:
-  dart_style: ^2.0.3
-  meta: ^1.7.0
-  quiver: ^3.0.1
-  recase: ^4.0.0
+  dart_style: ^2.3.6
+  meta: ^1.15.0
+  quiver: ^3.2.1
+  recase: ^4.1.0
+
+dev_dependencies:
+  lints: ^4.0.0
+  test: ^1.25.5

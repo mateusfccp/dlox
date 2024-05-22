@@ -2,7 +2,7 @@ import 'errors.dart';
 import 'token.dart';
 import 'token_type.dart';
 
-class Scanner {
+final class Scanner {
   Scanner(this._source);
 
   final String _source;
@@ -39,8 +39,14 @@ class Scanner {
       _scanToken();
     }
 
-    final eofToken = Token(type: TokenType.endOfFile, lexeme: '', literal: null, line: _line);
-    _tokens.add(eofToken);
+    _tokens.add(
+      Token(
+        type: TokenType.endOfFile,
+        lexeme: '',
+        literal: null,
+        line: _line,
+      ),
+    );
     return _tokens;
   }
 

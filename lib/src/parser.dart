@@ -1,9 +1,9 @@
 import 'errors.dart';
-import 'expr.dart';
+import 'expression.dart';
 import 'token.dart';
 import 'token_type.dart';
 
-class Parser {
+final class Parser {
   Parser(this._tokens);
 
   final List<Token> _tokens;
@@ -14,7 +14,7 @@ class Parser {
   bool get _isAtEnd => _peek.type == TokenType.endOfFile;
   bool get _isNotAtEnd => !_isAtEnd;
 
-  Expr parse() => _expression();
+  Expression parse() => _expression();
 
   bool _match(Set<TokenType> types) {
     for (final type in types) {
@@ -42,7 +42,7 @@ class Parser {
     }
   }
 
-  void _sinchronize() {
+  void _synchronize() {
     _advance();
     while (_isNotAtEnd) {
       if (_previous.type == TokenType.semicolon) {
@@ -65,9 +65,9 @@ class Parser {
     }
   }
 
-  Expr _expression() => _equality();
+  Expression _expression() => _equality();
 
-  Expr _equality() {
+  Expression _equality() {
     var expr = _comparison();
 
     while (_match({TokenType.bangEqual, TokenType.equalEqual})) {
@@ -79,7 +79,7 @@ class Parser {
     return expr;
   }
 
-  Expr _comparison() {
+  Expression _comparison() {
     var expr = _term();
 
     while (_match({TokenType.greater, TokenType.greaterEqual, TokenType.less, TokenType.lessEqual})) {
@@ -91,7 +91,7 @@ class Parser {
     return expr;
   }
 
-  Expr _term() {
+  Expression _term() {
     var expr = _factor();
 
     while (_match({TokenType.minus, TokenType.plus})) {
@@ -103,7 +103,7 @@ class Parser {
     return expr;
   }
 
-  Expr _factor() {
+  Expression _factor() {
     var expr = _unary();
 
     while (_match({TokenType.slash, TokenType.star})) {
@@ -115,7 +115,7 @@ class Parser {
     return expr;
   }
 
-  Expr _unary() {
+  Expression _unary() {
     if (_match({TokenType.bang, TokenType.minus})) {
       final operator = _previous;
       final right = _unary();
@@ -125,7 +125,7 @@ class Parser {
     }
   }
 
-  Expr _primary() {
+  Expression _primary() {
     if (_match({TokenType.falseKeyword})) {
       return Literal(false);
     } else if (_match({TokenType.trueKeyword})) {

@@ -1,25 +1,25 @@
 import 'token.dart';
 
-abstract class DloxError extends Error {
+sealed class DloxError extends Error {
   DloxError(this.message);
 
   final String message;
 }
 
-class ScanError extends DloxError {
-  ScanError(this.line, String message) : super(message);
+final class ScanError extends DloxError {
+  ScanError(this.line, super.message);
 
   final int line;
 }
 
-class ParseError extends DloxError {
-  ParseError(this.token, String message) : super(message);
+final class ParseError extends DloxError {
+  ParseError(this.token, super.message);
 
   final Token token;
 }
 
-class RuntimeError extends DloxError {
-  RuntimeError(this.token, String message) : super(message);
+final class RuntimeError extends DloxError {
+  RuntimeError(this.token, super.message);
 
   final Token token;
 }

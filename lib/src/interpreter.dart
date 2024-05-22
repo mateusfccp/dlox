@@ -1,12 +1,12 @@
 import 'errors.dart';
-import 'expr.dart';
+import 'expression.dart';
 import 'token.dart';
 import 'token_type.dart';
 
-class Interpreter implements ExprVisitor<Object?> {
-  Object? interpret(Expr expr) => _evaluate(expr);
+final class Interpreter implements ExpressionVisitor<Object?> {
+  Object? interpret(Expression expression) => _evaluate(expression);
 
-  String interpretAndReturnStringRepresentation(Expr expr) {
+  String interpretAndReturnStringRepresentation(Expression expr) {
     final value = _evaluate(expr);
     return _stringify(value);
   }
@@ -27,41 +27,41 @@ class Interpreter implements ExprVisitor<Object?> {
   }
 
   @override
-  Object? visitBinaryExpr(Binary expr) {
-    final left = _evaluate(expr.left);
-    final right = _evaluate(expr.right);
+  Object? visitBinaryExpression(Binary expression) {
+    final left = _evaluate(expression.left);
+    final right = _evaluate(expression.right);
 
-    switch (expr.operator.type) {
+    switch (expression.operator.type) {
       case TokenType.greater:
-        _checkNumberOperands(expr.operator, left, right);
+        _checkNumberOperands(expression.operator, left, right);
         return (left as double) > (right as double);
       case TokenType.greaterEqual:
-        _checkNumberOperands(expr.operator, left, right);
+        _checkNumberOperands(expression.operator, left, right);
         return (left as double) >= (right as double);
       case TokenType.less:
-        _checkNumberOperands(expr.operator, left, right);
+        _checkNumberOperands(expression.operator, left, right);
         return (left as double) < (right as double);
       case TokenType.lessEqual:
-        _checkNumberOperands(expr.operator, left, right);
+        _checkNumberOperands(expression.operator, left, right);
         return (left as double) <= (right as double);
       case TokenType.bangEqual:
         return left != right; // TODO(mateusfccp): Check if this is valid, as the implementation differs from the Java version from the book
       case TokenType.equalEqual:
         return left == right; // TODO(mateusfccp): Check if this is valid, as the implementation differs from the Java version from the book
       case TokenType.minus:
-        _checkNumberOperands(expr.operator, left, right);
+        _checkNumberOperands(expression.operator, left, right);
         return (left as double) - (right as double);
       case TokenType.plus:
         if ((left is double && right is double) || (left is String && right is String)) {
           return (left as dynamic) + (right as dynamic);
         } else {
-          throw RuntimeError(expr.operator, 'Operands must be two numbers or two strings. Got');
+          throw RuntimeError(expression.operator, 'Operands must be two numbers or two strings. Got');
         }
       case TokenType.slash:
-        _checkNumberOperands(expr.operator, left, right);
+        _checkNumberOperands(expression.operator, left, right);
         return (left as double) / (right as double);
       case TokenType.star:
-        _checkNumberOperands(expr.operator, left, right);
+        _checkNumberOperands(expression.operator, left, right);
         return (left as double) * (right as double);
       default:
         return null;
@@ -69,36 +69,33 @@ class Interpreter implements ExprVisitor<Object?> {
   }
 
   @override
-  Object? visitGroupingExpr(Grouping expr) => _evaluate(expr.expression);
+  Object? visitGroupingExpression(Grouping expression) => _evaluate(expression.expression);
 
   @override
-  Object? visitLiteralExpr(Literal expr) => expr.value;
+  Object? visitLiteralExpression(Literal expression) => expression.value;
 
   @override
-  Object? visitUnaryExpr(Unary expr) {
-    final right = _evaluate(expr.right);
+  Object? visitUnaryExpression(Unary expression) {
+    final right = _evaluate(expression.right);
 
-    switch (expr.operator.type) {
+    switch (expression.operator.type) {
       case TokenType.bang:
         return !_isTruthy(right);
       case TokenType.minus:
-        _checkNumberOperand(expr.operator, right);
+        _checkNumberOperand(expression.operator, right);
         return -(right as double);
       default:
         return null;
     }
   }
 
-  Object? _evaluate(Expr expr) => expr.accept(this);
+  Object? _evaluate(Expression expression) => expression.accept(this);
 
   bool _isTruthy(Object? value) {
-    if (value == null) {
-      return true;
-    } else if (value is bool) {
-      return value;
-    } else {
-      return true;
-    }
+    return switch (value) {
+      bool() => value,
+      Object() || null => true,
+    };
   }
 
   void _checkNumberOperand(Token operator, Object? operand) {
