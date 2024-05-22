@@ -27,6 +27,9 @@ After I implement all the proposed code in the book (i.e. up to chapter 13), I a
 ### Challenges
 
 - [ ] Multiline comments (Chapter 4, challenge 4)
-
-
-
+- [ ] Comma expressions (Chapter 6, challenge 1)
+- [ ] Conditional ternary operator (Chapter 6, challenge 2)
+- [ ] Handle binary operators without a left-hand operand (Chapter 6, challenge 3)
+- [ ] Allow adding `string` + `any` with implicitly conversion (Chapter 7, challenge 2)
+- [ ] Handle division by zero (Chapter 7, challenge 3)
+- [ ] Support REPL after it was removed (Chapter 8, challenge 1)
