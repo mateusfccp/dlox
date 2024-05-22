@@ -1,4 +1,4 @@
-import 'errors.dart';
+import 'error.dart';
 import 'token.dart';
 
 final class Environment {

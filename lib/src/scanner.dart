@@ -1,11 +1,15 @@
-import 'errors.dart';
+import 'error.dart';
 import 'token.dart';
 import 'token_type.dart';
 
 final class Scanner {
-  Scanner(this._source);
+  Scanner(
+    this._source, {
+    ErrorHandler? errorHandler,
+  }) : _errorHandler = errorHandler;
 
   final String _source;
+  final ErrorHandler? _errorHandler;
   final _tokens = <Token>[];
 
   var _start = 0;
@@ -90,13 +94,10 @@ final class Scanner {
           _addToken(TokenType.slash);
         }
         break;
-      case ' ':
-      case '\r':
-      case '\t':
+      case ' ' || '\r' || '\t':
         break;
       case '\n':
         _line++;
-        break;
       case '"':
         return _string();
       default:
@@ -105,7 +106,9 @@ final class Scanner {
         } else if (_isAlpha(c)) {
           _identifier();
         } else {
-          // Handle error: unexpected character
+          _errorHandler?.emit(
+            ScanError(_line, "Unexpected character '$c'."),
+          );
         }
     }
   }
@@ -155,7 +158,9 @@ final class Scanner {
 
     // Thrown an error if the content ends before the string is closed
     if (_isAtEnd) {
-      throw ScanError(_line, 'Unterminated string.');
+      _errorHandler?.emit(
+        ScanError(_line, 'Unterminated string.'),
+      );
     }
 
     // Advance to the closing quotes (")

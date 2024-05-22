@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dlox/dlox.dart';
+import 'package:dlox/src/error.dart';
 import 'package:quiver/strings.dart';
 
 import 'src/sysexit.dart';
@@ -20,10 +21,13 @@ void runFile(String path) {
   final fileString = File(path).readAsStringSync();
   final error = run(fileString);
 
-  if (error is ParseError) {
-    exit(dataerr);
-  } else if (error is RuntimeError) {
-    exit(software);
+  switch (error) {
+    case ParseError() || ScanError():
+      exit(dataerr);
+    case RuntimeError():
+      exit(software);
+    case null:
+      break;
   }
 }
 
@@ -37,37 +41,45 @@ void runPrompt() {
 }
 
 DloxError? run(String source) {
-  final scanner = Scanner(source);
+  final errorHandler = ErrorHandler();
+
+  void handleError() {
+    final error = errorHandler.lastError;
+    final errorMessage = switch (error) {
+      ParseError() when error.token.type == TokenType.endOfFile => '[Line ${error.token.line}] Error at end: ${error.message}',
+      ParseError() => "[Line ${error.token.line}] Error at '${error.token.lexeme}': ${error.message}",
+      RuntimeError() => '[Line ${error.token.line}] ${error.message}',
+      ScanError() => "[Line ${error.line}] ${error.message}",
+      null => null,
+    };
+
+    if (errorMessage != null) {
+      stderr.writeln(errorMessage);
+    }
+  }
+
+  errorHandler.addListener(handleError);
+
+  final scanner = Scanner(
+    source,
+    errorHandler: errorHandler,
+  );
+
   final tokens = scanner.scanTokens();
 
-  final parser = Parser(tokens);
+  final parser = Parser(
+    tokens,
+    errorHandler: errorHandler,
+  );
 
-  try {
-    final statements = parser.parse();
-    final interpreter = Interpreter();
-    final result = interpreter.interpret(statements);
+  final statements = parser.parse();
 
-    stdout.writeln(result);
-  } on DloxError catch (e) {
-    stderr.writeln(error(e));
-    return e;
+  if (errorHandler.hadError) {
+    return errorHandler.lastError;
   }
 
-  return null;
-}
+  final interpreter = Interpreter();
+  interpreter.interpret(statements);
 
-String error(DloxError error) {
-  if (error is ParseError) {
-    if (error.token.type == TokenType.endOfFile) {
-      return '[Line ${error.token.line}] Error at end: ${error.message}';
-    } else {
-      return "[Line ${error.token.line}] Error at '${error.token.lexeme}': ${error.message}";
-    }
-  } else if (error is RuntimeError) {
-    return '[Line ${error.token.line}] ${error.message}';
-  } else {
-    // TODO(mateusfccp): Properly deal with non-possible case
-    throw error;
-  }
+  return errorHandler.lastError;
 }
-

@@ -1,23 +1,27 @@
 import 'dart:io';
 
 import 'environment.dart';
-import 'errors.dart';
+import 'error.dart';
 import 'expression.dart';
 import 'statement.dart';
 import 'token.dart';
 import 'token_type.dart';
 
 final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<void> {
+  Interpreter({ErrorHandler? errorHandler}) : _errorHandler = errorHandler;
+
   Environment _environment = Environment();
 
-  Object? interpret(List<Statement> statements) {
-    // try {
-    for (final statement in statements) {
-      _execute(statement);
+  final ErrorHandler? _errorHandler;
+
+  void interpret(List<Statement> statements) {
+    try {
+      for (final statement in statements) {
+        _execute(statement);
+      }
+    } on DloxError catch (error) {
+      _errorHandler?.emit(error);
     }
-    // } catch {
-    //   DloxError();
-    // }
   }
 
   String _stringify(Object? value) {
@@ -60,12 +64,12 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
       case TokenType.minus:
         _checkNumberOperands(expression.operator, left, right);
         return (left as double) - (right as double);
+      case TokenType.plus when left is double && right is double:
+        return left + right;
+      case TokenType.plus when left is String && right is String:
+        return left + right;
       case TokenType.plus:
-        if ((left is double && right is double) || (left is String && right is String)) {
-          return (left as dynamic) + (right as dynamic);
-        } else {
-          throw RuntimeError(expression.operator, 'Operands must be two numbers or two strings. Got');
-        }
+        throw RuntimeError(expression.operator, 'Operands must be two numbers or two strings. Got');
       case TokenType.slash:
         _checkNumberOperands(expression.operator, left, right);
         return (left as double) / (right as double);
@@ -170,7 +174,7 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
 
   void _checkNumberOperands(Token operator, Object? left, Object? right) {
     if (left is! double || right is! double) {
-      throw RuntimeError(operator, 'Operands must be a number!');
+      throw RuntimeError(operator, 'Operands must be numbers!');
     }
   }
 }

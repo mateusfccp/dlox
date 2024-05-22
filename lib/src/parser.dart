@@ -1,15 +1,26 @@
 import 'package:dlox/src/statement.dart';
 
-import 'errors.dart';
+import 'error.dart';
 import 'expression.dart';
 import 'token.dart';
 import 'token_type.dart';
 
 final class Parser {
-  Parser(this._tokens);
+  Parser(
+    this._tokens, {
+    ErrorHandler? errorHandler,
+  }) : _errorHandler = errorHandler;
 
   final List<Token> _tokens;
+  final ErrorHandler? _errorHandler;
+
   int _current = 0;
+
+  ParseError _error(Token token, String message) {
+    final error = ParseError(token, message);
+    _errorHandler?.emit(error);
+    return error;
+  }
 
   Token get _previous => _tokens[_current - 1];
 
@@ -21,8 +32,13 @@ final class Parser {
 
   List<Statement> parse() {
     final statements = <Statement>[];
+
     while (!_isAtEnd) {
-      statements.add(_declaration());
+      final declaration = _declaration();
+
+      if (declaration != null) {
+        statements.add(declaration);
+      }
     }
 
     return statements;
@@ -50,7 +66,7 @@ final class Parser {
     if (_check(type)) {
       return _advance();
     } else {
-      throw ParseError(_peek, message);
+      throw _error(_peek, message);
     }
   }
 
@@ -79,7 +95,7 @@ final class Parser {
 
   Expression _expression() => _assignment();
 
-  Statement _declaration() {
+  Statement? _declaration() {
     try {
       if (_match({TokenType.varKeyword})) {
         return _variableDeclaration();
@@ -88,7 +104,8 @@ final class Parser {
       }
     } on ParseError catch (error) {
       _synchronize();
-      rethrow; // TODO(mateusfccp): Fix error handling
+      _errorHandler?.emit(error);
+      return null;
     }
   }
 
@@ -132,7 +149,11 @@ final class Parser {
     final statements = <Statement>[];
 
     while (!_check(TokenType.rightBrace) && !_isAtEnd) {
-      statements.add(_declaration());
+      final declaration = _declaration();
+
+      if (declaration != null) {
+        statements.add(declaration);
+      }
     }
 
     _consume(TokenType.rightBrace, "Expect '}' after block.");
@@ -143,15 +164,16 @@ final class Parser {
     final expression = _equality();
 
     if (_match({TokenType.equal})) {
-      // final equals = _previous;
+      final equals = _previous;
       final value = _assignment();
 
       if (expression is VariableExpression) {
         return AssignExpression(expression.name, value);
       }
 
-      // TODO(mateusfccp): Fix error system
-      // _error(equals, "Invalid assignment target.");
+      _errorHandler?.emit(
+        ParseError(equals, "Invalid assignment target."),
+      );
     }
 
     return expression;
@@ -231,7 +253,9 @@ final class Parser {
       _consume(TokenType.rightParen, "Expect ')' after expression.");
       return GroupingExpression(expression);
     } else {
-      throw ParseError(_peek, 'Expect expression.');
+      final error = ParseError(_peek, 'Expect expression.');
+      _errorHandler?.emit(error);
+      throw error;
     }
   }
 }

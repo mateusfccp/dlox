@@ -32,7 +32,7 @@ void main(List<String> args) {
         'Print      : Expression expression',
         'Variable   : Token name, Expression? initializer',
       ],
-      ['expression.dart', 'statement.dart', 'token.dart'],
+      ['expression.dart', 'token.dart'],
     );
   }
 }

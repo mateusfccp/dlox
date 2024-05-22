@@ -1,6 +1,6 @@
 library dlox;
 
-export 'src/errors.dart';
+export 'src/error.dart';
 export 'src/interpreter.dart';
 export 'src/parser.dart';
 export 'src/scanner.dart';
