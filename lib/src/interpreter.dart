@@ -44,41 +44,23 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
     final left = _evaluate(expression.left);
     final right = _evaluate(expression.right);
 
-    switch (expression.operator.type) {
-      case TokenType.greater:
-        _checkNumberOperands(expression.operator, left, right);
-        return (left as double) > (right as double);
-      case TokenType.greaterEqual:
-        _checkNumberOperands(expression.operator, left, right);
-        return (left as double) >= (right as double);
-      case TokenType.less:
-        _checkNumberOperands(expression.operator, left, right);
-        return (left as double) < (right as double);
-      case TokenType.lessEqual:
-        _checkNumberOperands(expression.operator, left, right);
-        return (left as double) <= (right as double);
-      case TokenType.bangEqual:
-        return left != right; // TODO(mateusfccp): Check if this is valid, as the implementation differs from the Java version from the book
-      case TokenType.equalEqual:
-        return left == right; // TODO(mateusfccp): Check if this is valid, as the implementation differs from the Java version from the book
-      case TokenType.minus:
-        _checkNumberOperands(expression.operator, left, right);
-        return (left as double) - (right as double);
-      case TokenType.plus when left is double && right is double:
-        return left + right;
-      case TokenType.plus when left is String && right is String:
-        return left + right;
-      case TokenType.plus:
-        throw RuntimeError(expression.operator, 'Operands must be two numbers or two strings. Got');
-      case TokenType.slash:
-        _checkNumberOperands(expression.operator, left, right);
-        return (left as double) / (right as double);
-      case TokenType.star:
-        _checkNumberOperands(expression.operator, left, right);
-        return (left as double) * (right as double);
-      default:
-        return null;
-    }
+    return switch ((expression.operator.type, left, right)) {
+      (TokenType.greater, double left, double right) => left > right,
+      (TokenType.greaterEqual, double left, double right) => left >= right,
+      (TokenType.less, double left, double right) => left < right,
+      (TokenType.lessEqual, double left, double right) => left <= right,
+      (TokenType.bangEqual, _, _) => left != right, // TODO(mateusfccp): Check if this is valid, as the implementation differs from the Java version from the book
+      (TokenType.equalEqual, _, _) => left == right, // TODO(mateusfccp): Check if this is valid, as the implementation differs from the Java version from the book
+      (TokenType.minus, double left, double right) => (left) - (right),
+      (TokenType.plus, double left, double right) => left + right,
+      (TokenType.plus, String left, String right) => left + right,
+      (TokenType.plus, _, _) => throw RuntimeError(expression.operator, 'Operands must be two numbers or two strings. Got'),
+      (TokenType.slash, double left, double right) => (left) / (right),
+      (TokenType.star, double left, double right) => (left) * (right),
+      (TokenType.greater || TokenType.greaterEqual || TokenType.less || TokenType.lessEqual || TokenType.minus || TokenType.slash || TokenType.star, _, _) =>
+        throw RuntimeError(expression.operator, 'Operands must be numbers!'),
+      _ => null,
+    };
   }
 
   @override
@@ -88,18 +70,25 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
   Object? visitLiteralExpression(LiteralExpression expression) => expression.value;
 
   @override
+  Object? visitLogicalExpression(LogicalExpression expression) {
+    final left = _evaluate(expression.left);
+
+    if ((expression.operator.type == TokenType.andKeyword && _isTruthy(left)) || //
+        (expression.operator.type == TokenType.orKeyword && !_isTruthy(left))) return left;
+
+    return _evaluate(expression.right);
+  }
+
+  @override
   Object? visitUnaryExpression(UnaryExpression expression) {
     final right = _evaluate(expression.right);
 
-    switch (expression.operator.type) {
-      case TokenType.bang:
-        return !_isTruthy(right);
-      case TokenType.minus:
-        _checkNumberOperand(expression.operator, right);
-        return -(right as double);
-      default:
-        return null;
-    }
+    return switch (expression.operator.type) {
+      TokenType.bang => !_isTruthy(right),
+      TokenType.minus when right is double => -right,
+      TokenType.minus => throw RuntimeError(expression.operator, 'Operand must be a number!'),
+      _ => null,
+    };
   }
 
   @override
@@ -134,6 +123,17 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
   }
 
   @override
+  void visitIfStatement(IfStatement statement) {
+    final evaluatedCondition = _evaluate(statement.condition);
+
+    if (_isTruthy(evaluatedCondition)) {
+      _execute(statement.thenBranch);
+    } else if (statement.elseBranch case final elseBranch?) {
+      _execute(elseBranch);
+    }
+  }
+
+  @override
   void visitPrintStatement(PrintStatement statement) {
     final value = _evaluate(statement.expression);
     stdout.writeln(_stringify(value));
@@ -153,6 +153,13 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
   }
 
   @override
+  void visitWhileStatement(WhileStatement statement) {
+    while (_isTruthy(_evaluate(statement.condition))) {
+      _execute(statement.body);
+    }
+  }
+
+  @override
   Object? visitAssignExpression(AssignExpression expression) {
     final value = _evaluate(expression.value);
     _environment.assign(expression.name, value);
@@ -162,19 +169,8 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
   bool _isTruthy(Object? value) {
     return switch (value) {
       bool() => value,
-      Object() || null => true,
+      Object() => true,
+      null => false,
     };
-  }
-
-  void _checkNumberOperand(Token operator, Object? operand) {
-    if (operand is! double) {
-      throw RuntimeError(operator, 'Operand must be a number!');
-    }
-  }
-
-  void _checkNumberOperands(Token operator, Object? left, Object? right) {
-    if (left is! double || right is! double) {
-      throw RuntimeError(operator, 'Operands must be numbers!');
-    }
   }
 }

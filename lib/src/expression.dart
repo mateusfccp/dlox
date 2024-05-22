@@ -9,6 +9,7 @@ abstract interface class ExpressionVisitor<R> {
   R visitBinaryExpression(BinaryExpression expression);
   R visitGroupingExpression(GroupingExpression expression);
   R visitLiteralExpression(LiteralExpression expression);
+  R visitLogicalExpression(LogicalExpression expression);
   R visitUnaryExpression(UnaryExpression expression);
   R visitVariableExpression(VariableExpression expression);
 }
@@ -57,6 +58,19 @@ final class LiteralExpression implements Expression {
   @override
   R accept<R>(ExpressionVisitor<R> visitor) {
     return visitor.visitLiteralExpression(this);
+  }
+}
+
+final class LogicalExpression implements Expression {
+  const LogicalExpression(this.left, this.operator, this.right);
+
+  final Expression left;
+  final Token operator;
+  final Expression right;
+
+  @override
+  R accept<R>(ExpressionVisitor<R> visitor) {
+    return visitor.visitLogicalExpression(this);
   }
 }
 

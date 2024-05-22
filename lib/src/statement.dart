@@ -8,8 +8,10 @@ abstract interface class Statement {
 abstract interface class StatementVisitor<R> {
   R visitBlockStatement(BlockStatement statement);
   R visitExpressionStatement(ExpressionStatement statement);
+  R visitIfStatement(IfStatement statement);
   R visitPrintStatement(PrintStatement statement);
   R visitVariableStatement(VariableStatement statement);
+  R visitWhileStatement(WhileStatement statement);
 }
 
 final class BlockStatement implements Statement {
@@ -34,6 +36,19 @@ final class ExpressionStatement implements Statement {
   }
 }
 
+final class IfStatement implements Statement {
+  const IfStatement(this.condition, this.thenBranch, this.elseBranch);
+
+  final Expression condition;
+  final Statement thenBranch;
+  final Statement? elseBranch;
+
+  @override
+  R accept<R>(StatementVisitor<R> visitor) {
+    return visitor.visitIfStatement(this);
+  }
+}
+
 final class PrintStatement implements Statement {
   const PrintStatement(this.expression);
 
@@ -54,5 +69,17 @@ final class VariableStatement implements Statement {
   @override
   R accept<R>(StatementVisitor<R> visitor) {
     return visitor.visitVariableStatement(this);
+  }
+}
+
+final class WhileStatement implements Statement {
+  const WhileStatement(this.condition, this.body);
+
+  final Expression condition;
+  final Statement body;
+
+  @override
+  R accept<R>(StatementVisitor<R> visitor) {
+    return visitor.visitWhileStatement(this);
   }
 }
