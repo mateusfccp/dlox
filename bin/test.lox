@@ -1,8 +1,13 @@
-var a = 0;
-var temp;
+fun makeCounter() {
+  var i = 0;
+  fun count() {
+    i = i + 1;
+    print i;
+  }
 
-for (var b = 1; a < 10000; b = temp + b) {
-  print a;
-  temp = a;
-  a = b;
+  return count;
 }
+
+var counter = makeCounter();
+counter(); // "1".
+counter(); // "2".

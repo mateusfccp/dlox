@@ -7,6 +7,7 @@ abstract interface class Expression {
 abstract interface class ExpressionVisitor<R> {
   R visitAssignExpression(AssignExpression expression);
   R visitBinaryExpression(BinaryExpression expression);
+  R visitCallExpression(CallExpression expression);
   R visitGroupingExpression(GroupingExpression expression);
   R visitLiteralExpression(LiteralExpression expression);
   R visitLogicalExpression(LogicalExpression expression);
@@ -36,6 +37,19 @@ final class BinaryExpression implements Expression {
   @override
   R accept<R>(ExpressionVisitor<R> visitor) {
     return visitor.visitBinaryExpression(this);
+  }
+}
+
+final class CallExpression implements Expression {
+  const CallExpression(this.callee, this.parenthesis, this.arguments);
+
+  final Expression callee;
+  final Token parenthesis;
+  final List<Expression> arguments;
+
+  @override
+  R accept<R>(ExpressionVisitor<R> visitor) {
+    return visitor.visitCallExpression(this);
   }
 }
 

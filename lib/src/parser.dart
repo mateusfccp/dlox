@@ -31,17 +31,10 @@ final class Parser {
   bool get _isNotAtEnd => !_isAtEnd;
 
   List<Statement> parse() {
-    final statements = <Statement>[];
-
-    while (!_isAtEnd) {
-      final declaration = _declaration();
-
-      if (declaration != null) {
-        statements.add(declaration);
-      }
-    }
-
-    return statements;
+    return [
+      for (; !_isAtEnd;)
+        if (_declaration() case final declaration?) declaration,
+    ];
   }
 
   bool _match(TokenType type1, [TokenType? type2, TokenType? type3, TokenType? type4]) {
@@ -99,7 +92,9 @@ final class Parser {
 
   Statement? _declaration() {
     try {
-      if (_match(TokenType.varKeyword)) {
+      if (_match(TokenType.funKeyword)) {
+        return _function('function');
+      } else if (_match(TokenType.varKeyword)) {
         return _variableDeclaration();
       } else {
         return _statement();
@@ -117,6 +112,8 @@ final class Parser {
       return _ifStatement();
     } else if (_match(TokenType.printKeyword)) {
       return _printStatement();
+    } else if (_match(TokenType.returnKeyword)) {
+      return _returnStatement();
     } else if (_match(TokenType.whileKeyword)) {
       return _whileStatement();
     } else if (_match(TokenType.leftBrace)) {
@@ -193,6 +190,21 @@ final class Parser {
     return PrintStatement(value);
   }
 
+  Statement _returnStatement() {
+    final keyword = _previous;
+
+    final Expression? value;
+    if (_check(TokenType.semicolon)) {
+      value = null;
+    } else {
+      value = _expression();
+    }
+
+    _consume(TokenType.semicolon, "Expect ';' after return value.");
+
+    return ReturnStatement(keyword, value);
+  }
+
   Statement _variableDeclaration() {
     final name = _consume(TokenType.identifier, 'Expect variable name.');
 
@@ -219,6 +231,32 @@ final class Parser {
     final expression = _expression();
     _consume(TokenType.semicolon, "Expect ';' after expression");
     return ExpressionStatement(expression);
+  }
+
+  // TODO(mateusfccp): Make kind better
+  FunctionStatement _function(String kind) {
+    final name = _consume(TokenType.identifier, 'Expect $kind name.');
+    final parameters = <Token>[];
+    _consume(TokenType.leftParen, '');
+
+    if (!_check(TokenType.rightParen)) {
+      do {
+        if (parameters.length >= 255) {
+          _errorHandler?.emit(
+            ParseError(_peek, "Can't have more than 255 parameters."),
+          );
+        }
+
+        parameters.add(
+          _consume(TokenType.identifier, 'Expect parameter name.'),
+        );
+      } while (_match(TokenType.comma));
+    }
+
+    _consume(TokenType.rightParen, '');
+    _consume(TokenType.leftBrace, "Expect '{' before $kind body.");
+
+    return FunctionStatement(name, parameters, _block());
   }
 
   List<Statement> _block() {
@@ -337,8 +375,40 @@ final class Parser {
       final right = _unary();
       return UnaryExpression(operator, right);
     } else {
-      return _primary();
+      return _call();
     }
+  }
+
+  Expression _finishCall(Expression callee) {
+    final arguments = <Expression>[];
+
+    if (!_check(TokenType.rightParen)) {
+      do {
+        if (arguments.length >= 255) {
+          _errorHandler?.emit(
+            ParseError(_peek, "Can't have more than 255 arguments"),
+          );
+        }
+        arguments.add(_expression());
+      } while (_match(TokenType.comma));
+    }
+
+    final parenthesis = _consume(TokenType.rightParen, "Expect ')' after arguments.");
+    return CallExpression(callee, parenthesis, arguments);
+  }
+
+  Expression _call() {
+    var expression = _primary();
+
+    while (true) {
+      if (_match(TokenType.leftParen)) {
+        expression = _finishCall(expression);
+      } else {
+        break;
+      }
+    }
+
+    return expression;
   }
 
   Expression _primary() {

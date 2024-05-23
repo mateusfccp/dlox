@@ -15,6 +15,7 @@ void main(List<String> args) {
       [
         'Assign   : Token name, Expression value',
         'Binary   : Expression left, Token operator, Expression right',
+        'Call     : Expression callee, Token parenthesis, List<Expression> arguments',
         'Grouping : Expression expression',
         'Literal  : Object? value',
         'Logical  : Expression left, Token operator, Expression right',
@@ -30,8 +31,10 @@ void main(List<String> args) {
       [
         'Block      : List<Statement> statements',
         'Expression : Expression expression',
+        'Function : Token name, List<Token> parameters, List<Statement> body',
         'If         : Expression condition, Statement thenBranch, Statement? elseBranch',
         'Print      : Expression expression',
+        'Return     : Token keyword, Expression? value',
         'Variable   : Token name, Expression? initializer',
         'While      : Expression condition, Statement body',
       ],

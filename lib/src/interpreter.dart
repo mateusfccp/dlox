@@ -1,16 +1,23 @@
 import 'dart:io';
 
+import 'package:dlox/src/function.dart';
+import 'package:dlox/src/return.dart';
+
+import 'builtin_functions/clock.dart';
+import 'callable.dart';
 import 'environment.dart';
 import 'error.dart';
 import 'expression.dart';
 import 'statement.dart';
-import 'token.dart';
 import 'token_type.dart';
 
 final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<void> {
   Interpreter({ErrorHandler? errorHandler}) : _errorHandler = errorHandler;
 
-  Environment _environment = Environment();
+  late Environment _environment = globalEnvironment;
+
+  final globalEnvironment = Environment() //
+    ..define('clock', ClockCallable());
 
   final ErrorHandler? _errorHandler;
 
@@ -64,6 +71,23 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
   }
 
   @override
+  Object? visitCallExpression(CallExpression expression) {
+    final callee = _evaluate(expression.callee);
+
+    final arguments = [
+      for (final argument in expression.arguments) _evaluate(argument),
+    ];
+
+    if (callee is! Callable) {
+      throw RuntimeError(expression.parenthesis, 'Can only call functions and classes.');
+    } else if (arguments.length != callee.arity) {
+      throw RuntimeError(expression.parenthesis, 'Expected ${callee.arity} arguments but got ${arguments.length}.');
+    } else {
+      return callee.call(this, arguments);
+    }
+  }
+
+  @override
   Object? visitGroupingExpression(GroupingExpression expression) => _evaluate(expression.expression);
 
   @override
@@ -98,7 +122,7 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
 
   void _execute(Statement statement) => statement.accept(this);
 
-  void _executeBlock(List<Statement> statements, Environment environment) {
+  void executeBlock(List<Statement> statements, Environment environment) {
     final previous = _environment;
 
     try {
@@ -114,12 +138,18 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
 
   @override
   void visitBlockStatement(BlockStatement statement) {
-    _executeBlock(statement.statements, Environment(enclosing: _environment));
+    executeBlock(statement.statements, Environment(enclosing: _environment));
   }
 
   @override
   void visitExpressionStatement(ExpressionStatement statement) {
     _evaluate(statement.expression);
+  }
+
+  @override
+  void visitFunctionStatement(FunctionStatement statement) {
+    final function = Functionn(statement, _environment);
+    _environment.define(statement.name.lexeme, function);
   }
 
   @override
@@ -137,6 +167,16 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
   void visitPrintStatement(PrintStatement statement) {
     final value = _evaluate(statement.expression);
     stdout.writeln(_stringify(value));
+  }
+
+  @override
+  void visitReturnStatement(ReturnStatement statement) {
+    final value = switch (statement.value) {
+      Expression value => _evaluate(value),
+      null => null,
+    };
+
+    throw Return(value);
   }
 
   @override

@@ -19,7 +19,7 @@ After I implement all the proposed code in the book (i.e. up to chapter 13), I a
 - [x] Expressions (Chapter 6, 7)
 - [x] Statements (Chapter 8)
 - [x] Control Flow (Chapter 9)
-- [ ] Functions (Chapter 10)
+- [x] Functions (Chapter 10)
 - [ ] Resolving and Binding (Chapter 11)
 - [ ] Classes (Chapter 12)
 - [ ] Inheritance (Chapter 13)
@@ -34,12 +34,14 @@ After I implement all the proposed code in the book (i.e. up to chapter 13), I a
 - [ ] Handle division by zero (Chapter 7, challenge 3)
 - [ ] Support REPL after it was removed (Chapter 8, challenge 1)
 - [ ] `break` keyword for loops (Chapter 9, challenge 3)
+- [ ] Anonymous functions (Chapter 10, challenge 2)
 
 ### Intended features not proposed by the book
 
 - [ ] `unless` control flow (syntax sugar)
 - [ ] `do-while` control flow (syntax sugar) 
 
-## Other intended improvements
+### Other intended improvements
 
 - [ ] Use Dart macros to generate AST
+- [ ] Implement tests

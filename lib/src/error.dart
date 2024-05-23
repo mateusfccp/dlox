@@ -1,5 +1,4 @@
 import 'token.dart';
-import 'token_type.dart';
 
 sealed class DloxError extends Error {
   DloxError(this.message);
@@ -38,14 +37,6 @@ final class ErrorHandler {
   void removeListener(void Function() listener) => _listeners.remove(listener);
 
   void emit(DloxError error) {
-    // final errorMessage = switch (error) {
-    //   ParseError(token: Token(type: TokenType.endOfFile)) => '[Line ${error.token.line}] Error at end: ${error.message}',
-    //   ParseError() => "[Line ${error.token.line}] Error at '${error.token.lexeme}': ${error.message}",
-    //   RuntimeError () => '[Line ${error.token.line}] ${error.message}',
-    //   ScanError() => throw error,
-    // };
-    //
-    // stderr.writeln(errorMessage);
     _errors.add(error);
     for (final listener in _listeners) {
       listener.call();

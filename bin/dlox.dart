@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:dlox/dlox.dart';
-import 'package:dlox/src/error.dart';
 import 'package:quiver/strings.dart';
 
 import 'src/sysexit.dart';
