@@ -35,6 +35,8 @@ After I implement all the proposed code in the book (i.e. up to chapter 13), I a
 - [ ] Support REPL after it was removed (Chapter 8, challenge 1)
 - [ ] `break` keyword for loops (Chapter 9, challenge 3)
 - [ ] Anonymous functions (Chapter 10, challenge 2)
+- [ ] Non-used variables (Chapter 11, challenge 2)
+- [ ] Use integer index instead of name in variable resolution (Chapter 11, challenge 3)
 
 ### Intended features not proposed by the book
 
