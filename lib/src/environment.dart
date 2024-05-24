@@ -29,4 +29,22 @@ final class Environment {
   }
 
   void define(String name, Object? value) => _values[name] = value;
+
+  Object? getAt(int distance, String name) => ancestor(distance)._values[name];
+
+  void assignAt(int distance, Token name, Object? value) => ancestor(distance)._values[name.lexeme] = value;
+
+  Environment ancestor(int distance) {
+    var environment = this;
+
+    for (int i = 0; i < distance; i++) {
+      if (environment.enclosing case final enclosing?) {
+        environment = enclosing;
+      } else {
+        throw StateError('Expected to find ancestor up to $distance, but maximum depth was $i');
+      }
+    }
+
+    return environment;
+  }
 }

@@ -9,6 +9,7 @@ import 'environment.dart';
 import 'error.dart';
 import 'expression.dart';
 import 'statement.dart';
+import 'token.dart';
 import 'token_type.dart';
 
 final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<void> {
@@ -18,6 +19,8 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
 
   final globalEnvironment = Environment() //
     ..define('clock', ClockCallable());
+
+  final _locals = <Expression, int>{};
 
   final ErrorHandler? _errorHandler;
 
@@ -116,11 +119,25 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
   }
 
   @override
-  Object? visitVariableExpression(VariableExpression expression) => _environment.get(expression.name);
+  Object? visitVariableExpression(VariableExpression expression) => _lookUpVariable(expression.name, expression);
+
+  Object? _lookUpVariable(Token name, Expression expression) {
+    final distance = _locals[expression];
+
+    if (distance == null) {
+      return globalEnvironment.get(name);
+    } else {
+      return _environment.getAt(distance, name.lexeme);
+    }
+  }
 
   Object? _evaluate(Expression expression) => expression.accept(this);
 
   void _execute(Statement statement) => statement.accept(this);
+
+  void resolve(Expression expression, int depth) {
+    _locals[expression] = depth;
+  }
 
   void executeBlock(List<Statement> statements, Environment environment) {
     final previous = _environment;
@@ -202,7 +219,14 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
   @override
   Object? visitAssignExpression(AssignExpression expression) {
     final value = _evaluate(expression.value);
-    _environment.assign(expression.name, value);
+    final distance = _locals[expression];
+
+    if (distance == null) {
+      globalEnvironment.assign(expression.name, value);
+    } else {
+      _environment.assignAt(distance, expression.name, value);
+    }
+
     return value;
   }
 

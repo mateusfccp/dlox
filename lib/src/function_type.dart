@@ -1,0 +1,1 @@
+enum FunctionType { function }

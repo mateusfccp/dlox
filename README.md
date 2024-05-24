@@ -20,7 +20,7 @@ After I implement all the proposed code in the book (i.e. up to chapter 13), I a
 - [x] Statements (Chapter 8)
 - [x] Control Flow (Chapter 9)
 - [x] Functions (Chapter 10)
-- [ ] Resolving and Binding (Chapter 11)
+- [x] Resolving and Binding (Chapter 11)
 - [ ] Classes (Chapter 12)
 - [ ] Inheritance (Chapter 13)
 

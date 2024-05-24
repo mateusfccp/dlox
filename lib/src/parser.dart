@@ -1,3 +1,4 @@
+import 'package:dlox/src/function_type.dart';
 import 'package:dlox/src/statement.dart';
 
 import 'error.dart';
@@ -93,7 +94,7 @@ final class Parser {
   Statement? _declaration() {
     try {
       if (_match(TokenType.funKeyword)) {
-        return _function('function');
+        return _function(FunctionType.function);
       } else if (_match(TokenType.varKeyword)) {
         return _variableDeclaration();
       } else {
@@ -233,9 +234,8 @@ final class Parser {
     return ExpressionStatement(expression);
   }
 
-  // TODO(mateusfccp): Make kind better
-  FunctionStatement _function(String kind) {
-    final name = _consume(TokenType.identifier, 'Expect $kind name.');
+  FunctionStatement _function(FunctionType functionType) {
+    final name = _consume(TokenType.identifier, 'Expect $functionType name.');
     final parameters = <Token>[];
     _consume(TokenType.leftParen, '');
 
@@ -254,7 +254,7 @@ final class Parser {
     }
 
     _consume(TokenType.rightParen, '');
-    _consume(TokenType.leftBrace, "Expect '{' before $kind body.");
+    _consume(TokenType.leftBrace, "Expect '{' before $functionType body.");
 
     return FunctionStatement(name, parameters, _block());
   }

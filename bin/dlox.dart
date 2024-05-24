@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:dlox/dlox.dart';
+import 'package:dlox/src/resolver.dart';
 import 'package:quiver/strings.dart';
 
 import 'src/sysexit.dart';
@@ -78,6 +79,17 @@ DloxError? run(String source) {
   }
 
   final interpreter = Interpreter();
+  final resolver = Resolver(
+    interpreter,
+    errorHandler: errorHandler,
+  );
+  
+  resolver.resolve(statements);
+
+  if (errorHandler.hadError) {
+    return errorHandler.lastError;
+  }
+
   interpreter.interpret(statements);
 
   return errorHandler.lastError;
