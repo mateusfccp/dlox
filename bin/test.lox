@@ -1,10 +1,14 @@
-var a = "global";
-{
-  fun showA() {
-    print a;
-  }
+class InitializerTesting {
+      init() {
+      	     print "initializing class";
+	     print "still initializing";
+	     return;
+	     print "not initializing anymore";
+      }
 
-  showA();
-  var a = "block";
-  showA();
+      printSomething() {
+             print "something";
+      }
 }
+
+InitializerTesting().printSomething();

@@ -8,9 +8,12 @@ abstract interface class ExpressionVisitor<R> {
   R visitAssignExpression(AssignExpression expression);
   R visitBinaryExpression(BinaryExpression expression);
   R visitCallExpression(CallExpression expression);
+  R visitGetExpression(GetExpression expression);
   R visitGroupingExpression(GroupingExpression expression);
   R visitLiteralExpression(LiteralExpression expression);
   R visitLogicalExpression(LogicalExpression expression);
+  R visitSetExpression(SetExpression expression);
+  R visitThisExpression(ThisExpression expression);
   R visitUnaryExpression(UnaryExpression expression);
   R visitVariableExpression(VariableExpression expression);
 }
@@ -53,6 +56,18 @@ final class CallExpression implements Expression {
   }
 }
 
+final class GetExpression implements Expression {
+  const GetExpression(this.object, this.name);
+
+  final Expression object;
+  final Token name;
+
+  @override
+  R accept<R>(ExpressionVisitor<R> visitor) {
+    return visitor.visitGetExpression(this);
+  }
+}
+
 final class GroupingExpression implements Expression {
   const GroupingExpression(this.expression);
 
@@ -85,6 +100,30 @@ final class LogicalExpression implements Expression {
   @override
   R accept<R>(ExpressionVisitor<R> visitor) {
     return visitor.visitLogicalExpression(this);
+  }
+}
+
+final class SetExpression implements Expression {
+  const SetExpression(this.object, this.name, this.value);
+
+  final Expression object;
+  final Token name;
+  final Expression value;
+
+  @override
+  R accept<R>(ExpressionVisitor<R> visitor) {
+    return visitor.visitSetExpression(this);
+  }
+}
+
+final class ThisExpression implements Expression {
+  const ThisExpression(this.keyword);
+
+  final Token keyword;
+
+  @override
+  R accept<R>(ExpressionVisitor<R> visitor) {
+    return visitor.visitThisExpression(this);
   }
 }
 

@@ -1,13 +1,14 @@
 import 'dart:io';
 
-import 'package:dlox/src/function.dart';
-import 'package:dlox/src/return.dart';
-
 import 'builtin_functions/clock.dart';
 import 'callable.dart';
+import 'class.dart';
 import 'environment.dart';
 import 'error.dart';
 import 'expression.dart';
+import 'function.dart';
+import 'instance.dart';
+import 'return.dart';
 import 'statement.dart';
 import 'token.dart';
 import 'token_type.dart';
@@ -91,6 +92,17 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
   }
 
   @override
+  Object? visitGetExpression(GetExpression expression) {
+    final object = _evaluate(expression.object);
+
+    if (object is Instance) {
+      return object.get(expression.name);
+    } else {
+      throw RuntimeError(expression.name, 'Only instances have properties. Got a ${object.runtimeType}.');
+    }
+  }
+
+  @override
   Object? visitGroupingExpression(GroupingExpression expression) => _evaluate(expression.expression);
 
   @override
@@ -105,6 +117,24 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
 
     return _evaluate(expression.right);
   }
+
+  @override
+  Object? visitSetExpression(SetExpression expression) {
+    final object = _evaluate(expression.object);
+
+    if (object is Instance) {
+      final value = _evaluate(expression.value);
+
+      object.set(expression.name, value);
+
+      return value;
+    } else {
+      throw RuntimeError(expression.name, 'Only instances have fields. Got a ${object.runtimeType}.');
+    }
+  }
+
+  @override
+  Object? visitThisExpression(ThisExpression expression) => _lookUpVariable(expression.keyword, expression);
 
   @override
   Object? visitUnaryExpression(UnaryExpression expression) {
@@ -155,17 +185,43 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
 
   @override
   void visitBlockStatement(BlockStatement statement) {
-    executeBlock(statement.statements, Environment(enclosing: _environment));
+    executeBlock(
+      statement.statements,
+      Environment(enclosing: _environment),
+    );
   }
 
   @override
-  void visitExpressionStatement(ExpressionStatement statement) {
-    _evaluate(statement.expression);
+  void visitClassStatement(ClassStatement statement) {
+    _environment.define(statement.name.lexeme, null);
+
+    final methods = <String, Functionn>{
+      for (final method in statement.methods)
+        method.name.lexeme: Functionn(
+          method,
+          _environment,
+          method.name.lexeme == 'init',
+        ),
+    };
+
+    final class_ = Class(
+      statement.name.lexeme,
+      methods,
+    );
+
+    _environment.assign(statement.name, class_);
   }
+
+  @override
+  void visitExpressionStatement(ExpressionStatement statement) => _evaluate(statement.expression);
 
   @override
   void visitFunctionStatement(FunctionStatement statement) {
-    final function = Functionn(statement, _environment);
+    final function = Functionn(
+      statement,
+      _environment,
+      false,
+    );
     _environment.define(statement.name.lexeme, function);
   }
 

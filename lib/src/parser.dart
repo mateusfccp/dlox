@@ -1,8 +1,7 @@
-import 'package:dlox/src/function_type.dart';
-import 'package:dlox/src/statement.dart';
-
 import 'error.dart';
 import 'expression.dart';
+import 'function_type.dart';
+import 'statement.dart';
 import 'token.dart';
 import 'token_type.dart';
 
@@ -93,7 +92,9 @@ final class Parser {
 
   Statement? _declaration() {
     try {
-      if (_match(TokenType.funKeyword)) {
+      if (_match(TokenType.classKeyword)) {
+        return _class();
+      } else if (_match(TokenType.funKeyword)) {
         return _function(FunctionType.function);
       } else if (_match(TokenType.varKeyword)) {
         return _variableDeclaration();
@@ -122,6 +123,21 @@ final class Parser {
     } else {
       return _expressionStatement();
     }
+  }
+
+  Statement _class() {
+    final name = _consume(TokenType.identifier, 'Expect class name.');
+    _consume(TokenType.leftBrace, "Expect '{' after class name.");
+
+    final methods = <FunctionStatement>[];
+
+    while (!_check(TokenType.rightBrace) && !_isAtEnd) {
+      // while (_check(TokenType.identifier)) { // TODO(mateusfccp): Testar esse caso
+      methods.add(_function(FunctionType.method));
+    }
+
+    _consume(TokenType.rightBrace, "Expect '}' after class body.");
+    return ClassStatement(name, methods);
   }
 
   Statement _forStatement() {
@@ -283,11 +299,13 @@ final class Parser {
 
       if (expression is VariableExpression) {
         return AssignExpression(expression.name, value);
+      } else if (expression is GetExpression) {
+        return SetExpression(expression.object, expression.name, value);
+      } else {
+        _errorHandler?.emit(
+          ParseError(equals, "Invalid assignment target."),
+        );
       }
-
-      _errorHandler?.emit(
-        ParseError(equals, "Invalid assignment target."),
-      );
     }
 
     return expression;
@@ -336,7 +354,8 @@ final class Parser {
   Expression _comparison() {
     var expression = _term();
 
-    while (_match(TokenType.greater, TokenType.greaterEqual, TokenType.less, TokenType.lessEqual)) {
+    while (_match(TokenType.greater, TokenType.greaterEqual, TokenType.less,
+        TokenType.lessEqual)) {
       final operator = _previous;
       final right = _term();
       expression = BinaryExpression(expression, operator, right);
@@ -393,7 +412,8 @@ final class Parser {
       } while (_match(TokenType.comma));
     }
 
-    final parenthesis = _consume(TokenType.rightParen, "Expect ')' after arguments.");
+    final parenthesis =
+        _consume(TokenType.rightParen, "Expect ')' after arguments.");
     return CallExpression(callee, parenthesis, arguments);
   }
 
@@ -403,7 +423,10 @@ final class Parser {
     while (true) {
       if (_match(TokenType.leftParen)) {
         expression = _finishCall(expression);
-      } else {
+      } else if (_match(TokenType.dot)) {
+        final name = _consume(TokenType.identifier, "Expect property name after '.'.");
+        expression = GetExpression(expression, name);
+      } else { 
         break;
       }
     }
@@ -420,6 +443,8 @@ final class Parser {
       return LiteralExpression(null);
     } else if (_match(TokenType.number, TokenType.string)) {
       return LiteralExpression(_previous.literal);
+    } else if (_match(TokenType.thisKeyword)) {
+      return ThisExpression(_previous);
     } else if (_match(TokenType.identifier)) {
       return VariableExpression(_previous);
     } else if (_match(TokenType.leftParen)) {

@@ -1,5 +1,6 @@
 import 'dart:collection';
 
+import 'class_type.dart';
 import 'error.dart';
 import 'expression.dart';
 import 'function_type.dart';
@@ -16,6 +17,7 @@ final class Resolver implements ExpressionVisitor<void>, StatementVisitor<void> 
   final Interpreter _interpreter;
   final _scopes = ListQueue<Map<String, bool>>();
   FunctionType? _currentFunction;
+  ClassType? _currentClass;
 
   final ErrorHandler? _errorHandler;
 
@@ -26,7 +28,7 @@ final class Resolver implements ExpressionVisitor<void>, StatementVisitor<void> 
   }
 
   void _resolveFunction(FunctionStatement function, FunctionType functionType) {
-    final _enclosingFunction = _currentFunction;
+    final enclosingFunction = _currentFunction;
     _currentFunction = functionType;
     _beginScope();
     for (final parameter in function.parameters) {
@@ -35,7 +37,7 @@ final class Resolver implements ExpressionVisitor<void>, StatementVisitor<void> 
     }
     resolve(function.body);
     _endScope();
-    _currentFunction = _enclosingFunction;
+    _currentFunction = enclosingFunction;
   }
 
   void _beginScope() => _scopes.add({});
@@ -79,6 +81,30 @@ final class Resolver implements ExpressionVisitor<void>, StatementVisitor<void> 
   }
 
   @override
+  void visitClassStatement(ClassStatement statement) {
+    final enclosingClass = _currentClass;
+    _currentClass = ClassType.class_;
+
+    _declare(statement.name);
+    _define(statement.name);
+
+    _beginScope();
+    _scopes.last['this'] = true;
+
+    for (final method in statement.methods) {
+      final functionType = method.name.lexeme == 'init' //
+          ? FunctionType.initializer
+          : FunctionType.method;
+
+      _resolveFunction(method, functionType);
+    }
+
+    _endScope();
+
+    _currentClass = enclosingClass;
+  }
+
+  @override
   void visitExpressionStatement(ExpressionStatement statement) => _resolveExpression(statement.expression);
 
   @override
@@ -108,6 +134,15 @@ final class Resolver implements ExpressionVisitor<void>, StatementVisitor<void> 
     }
 
     if (statement.value case final value?) {
+      if (_currentFunction == FunctionType.initializer) {
+        _errorHandler?.emit(
+          ParseError(
+            statement.keyword,
+            "Can't return a value form an initializer.",
+          ), // TODO(mateusfccp): Resolve error daba daba
+        );
+      }
+
       _resolveExpression(value);
     }
   }
@@ -149,6 +184,9 @@ final class Resolver implements ExpressionVisitor<void>, StatementVisitor<void> 
   }
 
   @override
+  void visitGetExpression(GetExpression expression) => _resolveExpression(expression.object);
+
+  @override
   void visitGroupingExpression(GroupingExpression expression) => _resolveExpression(expression.expression);
 
   @override
@@ -158,6 +196,26 @@ final class Resolver implements ExpressionVisitor<void>, StatementVisitor<void> 
   void visitLogicalExpression(LogicalExpression expression) {
     _resolveExpression(expression.left);
     _resolveExpression(expression.right);
+  }
+
+  @override
+  void visitSetExpression(SetExpression expression) {
+    _resolveExpression(expression.object);
+    _resolveExpression(expression.value);
+  }
+
+  @override
+  void visitThisExpression(ThisExpression expression) {
+    if (_currentClass == null) {
+      _errorHandler?.emit(
+        ParseError(
+          expression.keyword,
+          "Can't use 'this' outside of a class.",
+        ),
+      ); // TODO(mateusfccp) Resolver error
+    } else {
+      _resolveLocal(expression, expression.keyword);
+    }
   }
 
   @override

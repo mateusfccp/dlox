@@ -21,7 +21,7 @@ After I implement all the proposed code in the book (i.e. up to chapter 13), I a
 - [x] Control Flow (Chapter 9)
 - [x] Functions (Chapter 10)
 - [x] Resolving and Binding (Chapter 11)
-- [ ] Classes (Chapter 12)
+- [x] Classes (Chapter 12)
 - [ ] Inheritance (Chapter 13)
 
 ### Challenges
@@ -37,6 +37,8 @@ After I implement all the proposed code in the book (i.e. up to chapter 13), I a
 - [ ] Anonymous functions (Chapter 10, challenge 2)
 - [ ] Non-used variables (Chapter 11, challenge 2)
 - [ ] Use integer index instead of name in variable resolution (Chapter 11, challenge 3)
+- [ ] Static methods (Chapter 12, challenge 1)
+- [ ] Getters/setters (Chapter 12, challenge 2)
 
 ### Intended features not proposed by the book
 

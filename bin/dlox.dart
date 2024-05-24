@@ -78,12 +78,13 @@ DloxError? run(String source) {
     return errorHandler.lastError;
   }
 
-  final interpreter = Interpreter();
+  final interpreter = Interpreter(errorHandler: errorHandler);
+
   final resolver = Resolver(
     interpreter,
     errorHandler: errorHandler,
   );
-  
+
   resolver.resolve(statements);
 
   if (errorHandler.hadError) {

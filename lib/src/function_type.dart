@@ -1,1 +1,5 @@
-enum FunctionType { function }
+enum FunctionType {
+  function,
+  initializer,
+  method,
+}

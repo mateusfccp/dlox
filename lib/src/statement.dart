@@ -7,6 +7,7 @@ abstract interface class Statement {
 
 abstract interface class StatementVisitor<R> {
   R visitBlockStatement(BlockStatement statement);
+  R visitClassStatement(ClassStatement statement);
   R visitExpressionStatement(ExpressionStatement statement);
   R visitFunctionStatement(FunctionStatement statement);
   R visitIfStatement(IfStatement statement);
@@ -24,6 +25,18 @@ final class BlockStatement implements Statement {
   @override
   R accept<R>(StatementVisitor<R> visitor) {
     return visitor.visitBlockStatement(this);
+  }
+}
+
+final class ClassStatement implements Statement {
+  const ClassStatement(this.name, this.methods);
+
+  final Token name;
+  final List<FunctionStatement> methods;
+
+  @override
+  R accept<R>(StatementVisitor<R> visitor) {
+    return visitor.visitClassStatement(this);
   }
 }
 
