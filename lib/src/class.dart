@@ -1,20 +1,20 @@
 import 'callable.dart';
-import 'function.dart';
 import 'instance.dart';
 import 'interpreter.dart';
+import 'routine.dart';
 
 final class Class implements Callable {
-  Class(
-    this.name,
-    this.superclass,
-    this._methods,
-  );
+  Class({
+    required this.name,
+    required this.superclass,
+    required Map<String, Routine> methods,
+  }) : _methods = methods;
 
   final String name;
   final Class? superclass;
-  final Map<String, Functionn> _methods;
+  final Map<String, Routine> _methods;
 
-  Functionn? findMethod(String name) => _methods[name] ?? superclass?.findMethod(name);
+  Routine? findMethod(String name) => _methods[name] ?? superclass?.findMethod(name);
 
   @override
   int get arity {

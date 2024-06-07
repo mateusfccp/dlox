@@ -3,26 +3,28 @@ import 'environment.dart';
 import 'instance.dart';
 import 'interpreter.dart';
 import 'return.dart';
+import 'routine_type.dart';
 import 'statement.dart';
 
-final class Functionn implements Callable {
-  Functionn(
-    this.declaration,
-    this._closure,
-    this._initializer,
-  );
+final class Routine implements Callable {
+  const Routine({
+    required this.declaration,
+    required Environment closure,
+    required RoutineType type,
+  })  : _closure = closure,
+        _type = type;
 
   final FunctionStatement declaration;
   final Environment _closure;
-  final bool _initializer;
+  final RoutineType _type;
 
-  Functionn bind(Instance instance) {
+  Routine bind(Instance instance) {
     final environment = Environment(enclosing: _closure);
     environment.define('this', instance);
-    return Functionn(
-      declaration,
-      environment,
-      _initializer,
+    return Routine(
+      declaration: declaration,
+      closure: environment,
+      type: _type,
     );
   }
 
@@ -40,14 +42,14 @@ final class Functionn implements Callable {
     try {
       interpreter.executeBlock(declaration.body, environment);
     } on Return catch (returnValue) {
-      if (_initializer) {
+      if (_type == RoutineType.initializer) {
         return _closure.getAt(0, 'this');
       } else {
         return returnValue.value;
       }
     }
 
-    if (_initializer) {
+    if (_type == RoutineType.initializer) {
       return _closure.getAt(0, 'this');
     } else {
       return null;

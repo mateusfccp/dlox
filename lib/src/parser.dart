@@ -1,15 +1,16 @@
 import 'error.dart';
 import 'expression.dart';
-import 'function_type.dart';
+import 'routine_type.dart';
 import 'statement.dart';
 import 'token.dart';
 import 'token_type.dart';
 
 final class Parser {
-  Parser(
-    this._tokens, {
+  Parser({
+    required List<Token> tokens,
     ErrorHandler? errorHandler,
-  }) : _errorHandler = errorHandler;
+  })  : _errorHandler = errorHandler,
+        _tokens = tokens;
 
   final List<Token> _tokens;
   final ErrorHandler? _errorHandler;
@@ -95,7 +96,7 @@ final class Parser {
       if (_match(TokenType.classKeyword)) {
         return _class();
       } else if (_match(TokenType.funKeyword)) {
-        return _function(FunctionType.function);
+        return _function(RoutineType.function);
       } else if (_match(TokenType.varKeyword)) {
         return _variableDeclaration();
       } else {
@@ -141,7 +142,7 @@ final class Parser {
     final methods = <FunctionStatement>[];
 
     while (!_check(TokenType.rightBrace) && !_isAtEnd) {
-      methods.add(_function(FunctionType.method));
+      methods.add(_function(RoutineType.method));
     }
 
     _consume(TokenType.rightBrace, "Expect '}' after class body.");
@@ -262,7 +263,7 @@ final class Parser {
     return ExpressionStatement(expression);
   }
 
-  FunctionStatement _function(FunctionType functionType) {
+  FunctionStatement _function(RoutineType functionType) {
     final name = _consume(TokenType.identifier, 'Expect $functionType name.');
     final parameters = <Token>[];
     _consume(TokenType.leftParen, '');

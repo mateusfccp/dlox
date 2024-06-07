@@ -61,14 +61,14 @@ DloxError? run(String source) {
   errorHandler.addListener(handleError);
 
   final scanner = Scanner(
-    source,
+    source: source,
     errorHandler: errorHandler,
   );
 
   final tokens = scanner.scanTokens();
 
   final parser = Parser(
-    tokens,
+    tokens: tokens,
     errorHandler: errorHandler,
   );
 
@@ -81,7 +81,7 @@ DloxError? run(String source) {
   final interpreter = Interpreter(errorHandler: errorHandler);
 
   final resolver = Resolver(
-    interpreter,
+    interpreter: interpreter,
     errorHandler: errorHandler,
   );
 

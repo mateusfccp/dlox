@@ -1,4 +1,4 @@
-enum FunctionType {
+enum RoutineType {
   function,
   initializer,
   method,

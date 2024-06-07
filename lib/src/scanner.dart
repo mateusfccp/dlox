@@ -3,10 +3,11 @@ import 'token.dart';
 import 'token_type.dart';
 
 final class Scanner {
-  Scanner(
-    this._source, {
+  Scanner({
+    required String source,
     ErrorHandler? errorHandler,
-  }) : _errorHandler = errorHandler;
+  })  : _errorHandler = errorHandler,
+        _source = source;
 
   final String _source;
   final ErrorHandler? _errorHandler;

@@ -6,9 +6,10 @@ import 'class.dart';
 import 'environment.dart';
 import 'error.dart';
 import 'expression.dart';
-import 'function.dart';
 import 'instance.dart';
 import 'return.dart';
+import 'routine.dart';
+import 'routine_type.dart';
 import 'statement.dart';
 import 'token.dart';
 import 'token_type.dart';
@@ -234,19 +235,21 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
       _environment.define('super', superclass);
     }
 
-    final methods = <String, Functionn>{
+    final methods = <String, Routine>{
       for (final method in statement.methods)
-        method.name.lexeme: Functionn(
-          method,
-          _environment,
-          method.name.lexeme == 'init',
+        method.name.lexeme: Routine(
+          declaration: method,
+          closure: _environment,
+          type: method.name.lexeme == 'init' //
+              ? RoutineType.initializer
+              : RoutineType.method,
         ),
     };
 
     final class_ = Class(
-      statement.name.lexeme,
-      superclass,
-      methods,
+      name: statement.name.lexeme,
+      superclass: superclass,
+      methods: methods,
     );
 
     if (statement.superclass != null) {
@@ -261,10 +264,10 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
 
   @override
   void visitFunctionStatement(FunctionStatement statement) {
-    final function = Functionn(
-      statement,
-      _environment,
-      false,
+    final function = Routine(
+      declaration: statement,
+      closure: _environment,
+      type: RoutineType.function,
     );
     _environment.define(statement.name.lexeme, function);
   }

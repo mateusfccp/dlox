@@ -3,20 +3,21 @@ import 'dart:collection';
 import 'class_type.dart';
 import 'error.dart';
 import 'expression.dart';
-import 'function_type.dart';
 import 'interpreter.dart';
+import 'routine_type.dart';
 import 'statement.dart';
 import 'token.dart';
 
 final class Resolver implements ExpressionVisitor<void>, StatementVisitor<void> {
-  Resolver(
-    this._interpreter, {
+  Resolver({
+    required Interpreter interpreter,
     ErrorHandler? errorHandler,
-  }) : _errorHandler = errorHandler;
+  })  : _errorHandler = errorHandler,
+        _interpreter = interpreter;
 
   final Interpreter _interpreter;
   final _scopes = ListQueue<Map<String, bool>>();
-  FunctionType? _currentFunction;
+  RoutineType? _currentFunction;
   ClassType? _currentClass;
 
   final ErrorHandler? _errorHandler;
@@ -27,7 +28,7 @@ final class Resolver implements ExpressionVisitor<void>, StatementVisitor<void> 
     }
   }
 
-  void _resolveFunction(FunctionStatement function, FunctionType functionType) {
+  void _resolveFunction(FunctionStatement function, RoutineType functionType) {
     final enclosingFunction = _currentFunction;
     _currentFunction = functionType;
     _beginScope();
@@ -96,7 +97,7 @@ final class Resolver implements ExpressionVisitor<void>, StatementVisitor<void> 
       }
 
       _currentClass = ClassType.subclass;
-      
+
       _resolveExpression(superclass);
 
       // Begin `super` scope
@@ -110,8 +111,8 @@ final class Resolver implements ExpressionVisitor<void>, StatementVisitor<void> 
 
     for (final method in statement.methods) {
       final functionType = method.name.lexeme == 'init' //
-          ? FunctionType.initializer
-          : FunctionType.method;
+          ? RoutineType.initializer
+          : RoutineType.method;
 
       _resolveFunction(method, functionType);
     }
@@ -135,7 +136,7 @@ final class Resolver implements ExpressionVisitor<void>, StatementVisitor<void> 
     _declare(statement.name);
     _define(statement.name);
 
-    _resolveFunction(statement, FunctionType.function);
+    _resolveFunction(statement, RoutineType.function);
   }
 
   @override
@@ -157,7 +158,7 @@ final class Resolver implements ExpressionVisitor<void>, StatementVisitor<void> 
     }
 
     if (statement.value case final value?) {
-      if (_currentFunction == FunctionType.initializer) {
+      if (_currentFunction == RoutineType.initializer) {
         _errorHandler?.emit(
           ParseError(
             statement.keyword,
