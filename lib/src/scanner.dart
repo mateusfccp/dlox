@@ -1,8 +1,9 @@
 import 'error.dart';
 import 'token.dart';
-import 'token_type.dart';
 
+/// A Lox scanner.
 final class Scanner {
+  /// Creates a Lox scanner for [source].
   Scanner({
     required String source,
     ErrorHandler? errorHandler,
@@ -17,7 +18,7 @@ final class Scanner {
   var _current = 0;
   var _line = 1;
 
-  static const keywords = {
+  static const _keywords = {
     'and': TokenType.andKeyword,
     'class': TokenType.classKeyword,
     'else': TokenType.elseKeyword,
@@ -38,6 +39,7 @@ final class Scanner {
 
   bool get _isAtEnd => _current >= _source.length;
 
+  /// Scans the source and returns the tokens.
   List<Token> scanTokens() {
     while (!_isAtEnd) {
       _start = _current;
@@ -59,9 +61,9 @@ final class Scanner {
     final c = _advance();
     switch (c) {
       case '(':
-        return _addToken(TokenType.leftParen);
+        return _addToken(TokenType.leftParenthesis);
       case ')':
-        return _addToken(TokenType.rightParen);
+        return _addToken(TokenType.rightParenthesis);
       case '{':
         return _addToken(TokenType.leftBrace);
       case '}':
@@ -77,7 +79,7 @@ final class Scanner {
       case ';':
         return _addToken(TokenType.semicolon);
       case '*':
-        return _addToken(TokenType.star);
+        return _addToken(TokenType.asterisk);
       case '!':
         return _addToken(_match('=') ? TokenType.bangEqual : TokenType.bang);
       case '=':
@@ -199,7 +201,7 @@ final class Scanner {
     }
 
     final text = _source.substring(_start, _current);
-    final tokenType = keywords[text] ?? TokenType.identifier;
+    final tokenType = _keywords[text] ?? TokenType.identifier;
     _addToken(tokenType);
   }
 }

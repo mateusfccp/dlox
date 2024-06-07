@@ -1,6 +1,14 @@
+export 'src/callable.dart';
+export 'src/class.dart';
+export 'src/class_type.dart';
+export 'src/environment.dart';
 export 'src/error.dart';
+export 'src/expression.dart';
+export 'src/instance.dart';
 export 'src/interpreter.dart';
 export 'src/parser.dart';
+export 'src/resolver.dart';
+export 'src/routine.dart';
+export 'src/routine_type.dart';
 export 'src/scanner.dart';
 export 'src/token.dart';
-export 'src/token_type.dart';

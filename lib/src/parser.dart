@@ -3,9 +3,10 @@ import 'expression.dart';
 import 'routine_type.dart';
 import 'statement.dart';
 import 'token.dart';
-import 'token_type.dart';
 
+/// A Lox parser.
 final class Parser {
+  /// Creates a Lox parser.
   Parser({
     required List<Token> tokens,
     ErrorHandler? errorHandler,
@@ -154,7 +155,7 @@ final class Parser {
   }
 
   Statement _forStatement() {
-    _consume(TokenType.leftParen, "Expect '(' after 'for'.");
+    _consume(TokenType.leftParenthesis, "Expect '(' after 'for'.");
 
     final Statement? initializer;
     if (_match(TokenType.semicolon)) {
@@ -174,13 +175,13 @@ final class Parser {
     _consume(TokenType.semicolon, "Expect ';' after loop condition.");
 
     final Expression? increment;
-    if (_check(TokenType.rightParen)) {
+    if (_check(TokenType.rightParenthesis)) {
       increment = null;
     } else {
       increment = _expression();
     }
 
-    _consume(TokenType.rightParen, "Expect ')' after for clauses.");
+    _consume(TokenType.rightParenthesis, "Expect ')' after for clauses.");
 
     final body = _statement();
 
@@ -197,9 +198,9 @@ final class Parser {
   }
 
   Statement _ifStatement() {
-    _consume(TokenType.leftParen, "Expect '(' after 'if'.");
+    _consume(TokenType.leftParenthesis, "Expect '(' after 'if'.");
     final condition = _expression();
-    _consume(TokenType.rightParen, "Expect ')' after if condition.");
+    _consume(TokenType.rightParenthesis, "Expect ')' after if condition.");
 
     final thenBranch = _statement();
 
@@ -250,9 +251,9 @@ final class Parser {
   }
 
   Statement _whileStatement() {
-    _consume(TokenType.leftParen, "Expect '(' after 'while'.");
+    _consume(TokenType.leftParenthesis, "Expect '(' after 'while'.");
     final condition = _expression();
-    _consume(TokenType.rightParen, "Expect ')' after while condition.");
+    _consume(TokenType.rightParenthesis, "Expect ')' after while condition.");
 
     return WhileStatement(condition, _statement());
   }
@@ -266,9 +267,9 @@ final class Parser {
   FunctionStatement _function(RoutineType functionType) {
     final name = _consume(TokenType.identifier, 'Expect $functionType name.');
     final parameters = <Token>[];
-    _consume(TokenType.leftParen, '');
+    _consume(TokenType.leftParenthesis, '');
 
-    if (!_check(TokenType.rightParen)) {
+    if (!_check(TokenType.rightParenthesis)) {
       do {
         if (parameters.length >= 255) {
           _errorHandler?.emit(
@@ -282,7 +283,7 @@ final class Parser {
       } while (_match(TokenType.comma));
     }
 
-    _consume(TokenType.rightParen, '');
+    _consume(TokenType.rightParenthesis, '');
     _consume(TokenType.leftBrace, "Expect '{' before $functionType body.");
 
     return FunctionStatement(name, parameters, _block());
@@ -391,7 +392,7 @@ final class Parser {
   Expression _factor() {
     var expression = _unary();
 
-    while (_match(TokenType.slash, TokenType.star)) {
+    while (_match(TokenType.slash, TokenType.asterisk)) {
       final operator = _previous;
       final right = _unary();
       expression = BinaryExpression(expression, operator, right);
@@ -413,7 +414,7 @@ final class Parser {
   Expression _finishCall(Expression callee) {
     final arguments = <Expression>[];
 
-    if (!_check(TokenType.rightParen)) {
+    if (!_check(TokenType.rightParenthesis)) {
       do {
         if (arguments.length >= 255) {
           _errorHandler?.emit(
@@ -424,7 +425,7 @@ final class Parser {
       } while (_match(TokenType.comma));
     }
 
-    final parenthesis = _consume(TokenType.rightParen, "Expect ')' after arguments.");
+    final parenthesis = _consume(TokenType.rightParenthesis, "Expect ')' after arguments.");
     return CallExpression(callee, parenthesis, arguments);
   }
 
@@ -432,7 +433,7 @@ final class Parser {
     var expression = _primary();
 
     while (true) {
-      if (_match(TokenType.leftParen)) {
+      if (_match(TokenType.leftParenthesis)) {
         expression = _finishCall(expression);
       } else if (_match(TokenType.dot)) {
         final name = _consume(TokenType.identifier, "Expect property name after '.'.");
@@ -465,9 +466,9 @@ final class Parser {
       return ThisExpression(_previous);
     } else if (_match(TokenType.identifier)) {
       return VariableExpression(_previous);
-    } else if (_match(TokenType.leftParen)) {
+    } else if (_match(TokenType.leftParenthesis)) {
       final expression = _expression();
-      _consume(TokenType.rightParen, "Expect ')' after expression.");
+      _consume(TokenType.rightParenthesis, "Expect ')' after expression.");
       return GroupingExpression(expression);
     } else {
       final error = ParseError(_peek, 'Expect expression.');

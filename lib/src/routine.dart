@@ -6,7 +6,15 @@ import 'return.dart';
 import 'routine_type.dart';
 import 'statement.dart';
 
+/// A Lox routine.
+///
+/// A Lox routine may be either a regular function, a method or a class
+/// initializer.
 final class Routine implements Callable {
+  /// Create a Lox routine.
+  ///
+  /// A Lox routine may be either a regular function, a method or a class
+  /// initializer, depending on the [type].
   const Routine({
     required this.declaration,
     required Environment closure,
@@ -18,6 +26,7 @@ final class Routine implements Callable {
   final Environment _closure;
   final RoutineType _type;
 
+  /// Binds this routing to a class [instance].
   Routine bind(Instance instance) {
     final environment = Environment(enclosing: _closure);
     environment.define('this', instance);

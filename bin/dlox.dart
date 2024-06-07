@@ -1,10 +1,8 @@
 import 'dart:io';
 
 import 'package:dlox/dlox.dart';
-import 'package:dlox/src/resolver.dart';
+import 'package:exitcode/exitcode.dart';
 import 'package:quiver/strings.dart';
-
-import 'src/sysexit.dart';
 
 void main(List<String> args) {
   if (args.length > 1) {
@@ -40,7 +38,7 @@ void runPrompt() {
   }
 }
 
-DloxError? run(String source) {
+LoxError? run(String source) {
   final errorHandler = ErrorHandler();
 
   void handleError() {
@@ -74,7 +72,7 @@ DloxError? run(String source) {
 
   final statements = parser.parse();
 
-  if (errorHandler.hadError) {
+  if (errorHandler.hasError) {
     return errorHandler.lastError;
   }
 
@@ -87,7 +85,7 @@ DloxError? run(String source) {
 
   resolver.resolve(statements);
 
-  if (errorHandler.hadError) {
+  if (errorHandler.hasError) {
     return errorHandler.lastError;
   }
 

@@ -8,7 +8,9 @@ import 'routine_type.dart';
 import 'statement.dart';
 import 'token.dart';
 
+/// A Lox resolver.
 final class Resolver implements ExpressionVisitor<void>, StatementVisitor<void> {
+  /// Creates a Lox resolver.
   Resolver({
     required Interpreter interpreter,
     ErrorHandler? errorHandler,
@@ -22,6 +24,9 @@ final class Resolver implements ExpressionVisitor<void>, StatementVisitor<void> 
 
   final ErrorHandler? _errorHandler;
 
+  /// Resolve the scopes of a Lox program.
+  ///
+  /// A Lox program is given by a list of [statements].
   void resolve(List<Statement> statements) {
     for (final statement in statements) {
       _resolveStatement(statement);

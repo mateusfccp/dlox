@@ -12,13 +12,20 @@ import 'routine.dart';
 import 'routine_type.dart';
 import 'statement.dart';
 import 'token.dart';
-import 'token_type.dart';
 
+/// A Lox interpreter.
 final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<void> {
+  /// Creates a Lox interpreter.
   Interpreter({ErrorHandler? errorHandler}) : _errorHandler = errorHandler;
 
   late Environment _environment = globalEnvironment;
 
+  /// The global environment of the program.
+  ///
+  /// The global environment is independent of each run. That means if you
+  /// [interpret] more than on program, these programs will share this
+  /// global environment.
+  // TODO(mateusfccp): Is this behavior intended?
   final globalEnvironment = Environment() //
     ..define('clock', ClockCallable());
 
@@ -26,12 +33,15 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
 
   final ErrorHandler? _errorHandler;
 
+  /// Interpret a Lox program.
+  ///
+  /// A Lox program is given by a list of [statements].
   void interpret(List<Statement> statements) {
     try {
       for (final statement in statements) {
         _execute(statement);
       }
-    } on DloxError catch (error) {
+    } on LoxError catch (error) {
       _errorHandler?.emit(error);
     }
   }
@@ -68,8 +78,8 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
       (TokenType.plus, String left, String right) => left + right,
       (TokenType.plus, _, _) => throw RuntimeError(expression.operator, 'Operands must be two numbers or two strings. Got'),
       (TokenType.slash, double left, double right) => (left) / (right),
-      (TokenType.star, double left, double right) => (left) * (right),
-      (TokenType.greater || TokenType.greaterEqual || TokenType.less || TokenType.lessEqual || TokenType.minus || TokenType.slash || TokenType.star, _, _) =>
+      (TokenType.asterisk, double left, double right) => (left) * (right),
+      (TokenType.greater || TokenType.greaterEqual || TokenType.less || TokenType.lessEqual || TokenType.minus || TokenType.slash || TokenType.asterisk, _, _) =>
         throw RuntimeError(expression.operator, 'Operands must be numbers!'),
       _ => null,
     };
@@ -185,10 +195,10 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
 
   void _execute(Statement statement) => statement.accept(this);
 
-  void resolve(Expression expression, int depth) {
-    _locals[expression] = depth;
-  }
+  /// Resolve the given [expression] at [depth].
+  void resolve(Expression expression, int depth) => _locals[expression] = depth;
 
+  /// Execute a list of [statements] with an [environment].
   void executeBlock(List<Statement> statements, Environment environment) {
     final previous = _environment;
 

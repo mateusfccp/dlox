@@ -4,7 +4,7 @@
 
 An implementation of the Lox language in Dart.
 
-Lox is a didactic language as proposed in the book [Crafting Interpreters](http://www.craftinginterpreters.com). In the first part of the book, the autor guides the reader in the process of making an interpreter for the Lox language in Java.
+Lox is a didactic language as proposed in the book [Crafting Interpreters](https://www.craftinginterpreters.com). In the first part of the book, the autor guides the reader in the process of making an interpreter for the Lox language in Java.
 
 This is a Dart adaptation of the proposed Java code for fun and for learning. Although most of the implementation is near identical to the Java one, there are some adaptations that I chose to made and some simplifications that the Dart language allowed me to do.
 
