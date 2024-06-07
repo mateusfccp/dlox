@@ -134,6 +134,25 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
   }
 
   @override
+  Object? visitSuperExpression(SuperExpression expression) {
+    final distance = _locals[expression];
+
+    if (distance == null) {
+      throw RuntimeError(expression.method, "'${expression.method.lexeme}' method has no access to 'super'. Are you sure the class has a superclass?");
+    }
+
+    final superclass = _environment.getAt(distance, 'super') as Class; // TODO(mateusfccp): avoid cast
+    final object = _environment.getAt(distance - 1, 'this') as Instance; // TODO(mateusfccp): avoid cast
+    final method = superclass.findMethod(expression.method.lexeme);
+
+    if (method == null) {
+      throw RuntimeError(expression.method, "Undefined property '${expression.method.lexeme}'.");
+    } else {
+      return method.bind(object);
+    }
+  }
+
+  @override
   Object? visitThisExpression(ThisExpression expression) => _lookUpVariable(expression.keyword, expression);
 
   @override
@@ -193,7 +212,27 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
 
   @override
   void visitClassStatement(ClassStatement statement) {
+    final Class? superclass;
+
+    if (statement.superclass case final potentialSuperclass?) {
+      if (_evaluate(potentialSuperclass) case final Class evaluatedSuperclass) {
+        superclass = evaluatedSuperclass;
+      } else {
+        throw RuntimeError(
+          potentialSuperclass.name,
+          'Superclass must be a class',
+        );
+      }
+    } else {
+      superclass = null;
+    }
+
     _environment.define(statement.name.lexeme, null);
+
+    if (statement.superclass != null) {
+      _environment = Environment(enclosing: _environment);
+      _environment.define('super', superclass);
+    }
 
     final methods = <String, Functionn>{
       for (final method in statement.methods)
@@ -206,8 +245,13 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
 
     final class_ = Class(
       statement.name.lexeme,
+      superclass,
       methods,
     );
+
+    if (statement.superclass != null) {
+      _environment = _environment.enclosing!; // TODO(mateusfccp): Remove this bang
+    }
 
     _environment.assign(statement.name, class_);
   }

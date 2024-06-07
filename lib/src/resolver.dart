@@ -88,6 +88,23 @@ final class Resolver implements ExpressionVisitor<void>, StatementVisitor<void> 
     _declare(statement.name);
     _define(statement.name);
 
+    if (statement.superclass case final superclass?) {
+      if (statement.name.lexeme == superclass.name.lexeme) {
+        _errorHandler?.emit(
+          ParseError(superclass.name, "A class can't inherit from itself."), // TODO(mateusfccp): resolve error
+        );
+      }
+
+      _currentClass = ClassType.subclass;
+      
+      _resolveExpression(superclass);
+
+      // Begin `super` scope
+      _beginScope();
+      _scopes.last['super'] = true;
+    }
+
+    // Begin `this` scope
     _beginScope();
     _scopes.last['this'] = true;
 
@@ -99,7 +116,13 @@ final class Resolver implements ExpressionVisitor<void>, StatementVisitor<void> 
       _resolveFunction(method, functionType);
     }
 
+    // End `this` scope
     _endScope();
+
+    // End `super` scope
+    if (statement.superclass != null) {
+      _endScope();
+    }
 
     _currentClass = enclosingClass;
   }
@@ -202,6 +225,27 @@ final class Resolver implements ExpressionVisitor<void>, StatementVisitor<void> 
   void visitSetExpression(SetExpression expression) {
     _resolveExpression(expression.object);
     _resolveExpression(expression.value);
+  }
+
+  @override
+  void visitSuperExpression(SuperExpression expression) {
+    if (_currentClass == null) {
+      _errorHandler?.emit(
+        ParseError(
+          expression.keyword,
+          "Can't use 'super' outside of a class.",
+        ),
+      );
+    } else if (_currentClass == ClassType.class_) {
+      _errorHandler?.emit(
+        ParseError(
+          expression.keyword,
+          "Can't use 'super' in a class with no superclass.",
+        ),
+      );
+    } else {
+      _resolveLocal(expression, expression.keyword);
+    }
   }
 
   @override

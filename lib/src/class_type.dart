@@ -1,1 +1,4 @@
-enum ClassType { class_ }
+enum ClassType {
+  class_,
+  subclass,
+}

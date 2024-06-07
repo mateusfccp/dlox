@@ -4,12 +4,17 @@ import 'instance.dart';
 import 'interpreter.dart';
 
 final class Class implements Callable {
-  Class(this.name, this._methods);
+  Class(
+    this.name,
+    this.superclass,
+    this._methods,
+  );
 
   final String name;
+  final Class? superclass;
   final Map<String, Functionn> _methods;
 
-  Functionn? findMethod(String name) => _methods[name];
+  Functionn? findMethod(String name) => _methods[name] ?? superclass?.findMethod(name);
 
   @override
   int get arity {

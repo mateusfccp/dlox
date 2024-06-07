@@ -21,6 +21,7 @@ void main(List<String> args) {
         'Literal  : Object? value',
         'Logical  : Expression left, Token operator, Expression right',
         'Set      : Expression object, Token name, Expression value',
+        'Super    : Token keyword, Token method',
         'This     : Token keyword',
         'Unary    : Token operator, Expression right',
         'Variable : Token name',
@@ -33,7 +34,7 @@ void main(List<String> args) {
       'Statement',
       [
         'Block      : List<Statement> statements',
-        'Class      : Token name, List<FunctionStatement> methods',
+        'Class      : Token name, VariableExpression? superclass, List<FunctionStatement> methods',
         'Expression : Expression expression',
         'Function   : Token name, List<Token> parameters, List<Statement> body',
         'If         : Expression condition, Statement thenBranch, Statement? elseBranch',

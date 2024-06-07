@@ -13,6 +13,7 @@ abstract interface class ExpressionVisitor<R> {
   R visitLiteralExpression(LiteralExpression expression);
   R visitLogicalExpression(LogicalExpression expression);
   R visitSetExpression(SetExpression expression);
+  R visitSuperExpression(SuperExpression expression);
   R visitThisExpression(ThisExpression expression);
   R visitUnaryExpression(UnaryExpression expression);
   R visitVariableExpression(VariableExpression expression);
@@ -113,6 +114,18 @@ final class SetExpression implements Expression {
   @override
   R accept<R>(ExpressionVisitor<R> visitor) {
     return visitor.visitSetExpression(this);
+  }
+}
+
+final class SuperExpression implements Expression {
+  const SuperExpression(this.keyword, this.method);
+
+  final Token keyword;
+  final Token method;
+
+  @override
+  R accept<R>(ExpressionVisitor<R> visitor) {
+    return visitor.visitSuperExpression(this);
   }
 }
 

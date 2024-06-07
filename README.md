@@ -22,7 +22,7 @@ After I implement all the proposed code in the book (i.e. up to chapter 13), I a
 - [x] Functions (Chapter 10)
 - [x] Resolving and Binding (Chapter 11)
 - [x] Classes (Chapter 12)
-- [ ] Inheritance (Chapter 13)
+- [x] Inheritance (Chapter 13)
 
 ### Challenges
 

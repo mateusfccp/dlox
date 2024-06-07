@@ -29,9 +29,10 @@ final class BlockStatement implements Statement {
 }
 
 final class ClassStatement implements Statement {
-  const ClassStatement(this.name, this.methods);
+  const ClassStatement(this.name, this.superclass, this.methods);
 
   final Token name;
+  final VariableExpression? superclass;
   final List<FunctionStatement> methods;
 
   @override

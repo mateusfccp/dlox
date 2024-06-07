@@ -127,17 +127,29 @@ final class Parser {
 
   Statement _class() {
     final name = _consume(TokenType.identifier, 'Expect class name.');
+    final VariableExpression? superclass;
+
+    if (_match(TokenType.less)) {
+      _consume(TokenType.identifier, 'Expect superclas name.');
+      superclass = VariableExpression(_previous);
+    } else {
+      superclass = null;
+    }
+
     _consume(TokenType.leftBrace, "Expect '{' after class name.");
 
     final methods = <FunctionStatement>[];
 
     while (!_check(TokenType.rightBrace) && !_isAtEnd) {
-      // while (_check(TokenType.identifier)) { // TODO(mateusfccp): Testar esse caso
       methods.add(_function(FunctionType.method));
     }
 
     _consume(TokenType.rightBrace, "Expect '}' after class body.");
-    return ClassStatement(name, methods);
+    return ClassStatement(
+      name,
+      superclass,
+      methods,
+    );
   }
 
   Statement _forStatement() {
@@ -354,8 +366,7 @@ final class Parser {
   Expression _comparison() {
     var expression = _term();
 
-    while (_match(TokenType.greater, TokenType.greaterEqual, TokenType.less,
-        TokenType.lessEqual)) {
+    while (_match(TokenType.greater, TokenType.greaterEqual, TokenType.less, TokenType.lessEqual)) {
       final operator = _previous;
       final right = _term();
       expression = BinaryExpression(expression, operator, right);
@@ -412,8 +423,7 @@ final class Parser {
       } while (_match(TokenType.comma));
     }
 
-    final parenthesis =
-        _consume(TokenType.rightParen, "Expect ')' after arguments.");
+    final parenthesis = _consume(TokenType.rightParen, "Expect ')' after arguments.");
     return CallExpression(callee, parenthesis, arguments);
   }
 
@@ -426,7 +436,7 @@ final class Parser {
       } else if (_match(TokenType.dot)) {
         final name = _consume(TokenType.identifier, "Expect property name after '.'.");
         expression = GetExpression(expression, name);
-      } else { 
+      } else {
         break;
       }
     }
@@ -443,6 +453,13 @@ final class Parser {
       return LiteralExpression(null);
     } else if (_match(TokenType.number, TokenType.string)) {
       return LiteralExpression(_previous.literal);
+    } else if (_match(TokenType.superKeyword)) {
+      final keyword = _previous;
+      _consume(TokenType.dot, "Expect '.' after super.");
+
+      final method = _consume(TokenType.identifier, 'Expect superclass method name.');
+
+      return SuperExpression(keyword, method);
     } else if (_match(TokenType.thisKeyword)) {
       return ThisExpression(_previous);
     } else if (_match(TokenType.identifier)) {

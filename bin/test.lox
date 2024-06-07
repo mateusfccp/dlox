@@ -1,14 +1,16 @@
-class InitializerTesting {
-      init() {
-      	     print "initializing class";
-	     print "still initializing";
-	     return;
-	     print "not initializing anymore";
-      }
-
-      printSomething() {
-             print "something";
-      }
+class Doughnut {
+  cook() {
+    print "Fry until golden brown.";
+  }
 }
 
-InitializerTesting().printSomething();
+class BostonCream {
+  cook() {
+    super.cook();
+    print "Pipe full of custard and coat with chocolate.";
+  }
+}
+
+BostonCream().cook();
+
+super.something();
