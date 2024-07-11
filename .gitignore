@@ -8,3 +8,6 @@ pubspec.lock
 
 # IntelliJ
 .idea/
+
+# macOS
+.DS_Store

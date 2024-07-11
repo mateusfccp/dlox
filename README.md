@@ -48,4 +48,5 @@ After I implement all the proposed code in the book (i.e. up to chapter 13), I a
 ### Other intended improvements
 
 - [ ] Use Dart macros to generate AST
-- [ ] Implement tests
+- [x] Implement tests
+  - Maybe the tests are not extremely exhaustive, but it covers everything I could think of. More tests can be added every time we find a language bug.

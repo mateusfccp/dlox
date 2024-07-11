@@ -17,6 +17,7 @@ final class Scanner {
   var _start = 0;
   var _current = 0;
   var _line = 1;
+  var _column = 0;
 
   static const _keywords = {
     'and': TokenType.andKeyword,
@@ -51,6 +52,7 @@ final class Scanner {
         type: TokenType.endOfFile,
         lexeme: '',
         literal: null,
+        column: _column,
         line: _line,
       ),
     );
@@ -58,8 +60,8 @@ final class Scanner {
   }
 
   void _scanToken() {
-    final c = _advance();
-    switch (c) {
+    final character = _advance();
+    switch (character) {
       case '(':
         return _addToken(TokenType.leftParenthesis);
       case ')':
@@ -101,16 +103,24 @@ final class Scanner {
         break;
       case '\n':
         _line++;
+        _column = 0;
       case '"':
         return _string();
       default:
-        if (_isDigit(c)) {
+        if (_isDigit(character)) {
           _number();
-        } else if (_isAlpha(c)) {
+        } else if (_isAlpha(character)) {
           _identifier();
         } else {
           _errorHandler?.emit(
-            ScanError(_line, "Unexpected character '$c'."),
+            UnexpectedCharacterError(
+              location: ScanLocation(
+                offset: _current,
+                line: _line,
+                column: _column,
+              ),
+              character: character,
+            ),
           );
         }
     }
@@ -118,16 +128,27 @@ final class Scanner {
 
   void _addToken(TokenType type, [Object? literal]) {
     final text = _source.substring(_start, _current);
-    final token = Token(type: type, lexeme: text, literal: literal, line: _line);
+    final token = Token(
+      type: type,
+      lexeme: text,
+      literal: literal,
+      column: _column,
+      line: _line,
+    );
+
     _tokens.add(token);
   }
 
-  String _advance() => _source[_current++];
+  String _advance() {
+    _column++;
+    return _source[_current++];
+  }
 
   bool _match(String expected) {
     if (_isAtEnd || _source[_current] != expected) {
       return false;
     } else {
+      _column++;
       _current++;
       return true;
     }
@@ -155,23 +176,32 @@ final class Scanner {
   void _string() {
     // Consume all the characters until we find the closing quotes (")
     while (_peek() != '"' && !_isAtEnd) {
-      if (_peek() == '\n') _line++;
+      if (_peek() == '\n') {
+        _line++;
+        _column = 0;
+      }
       _advance();
     }
 
     // Thrown an error if the content ends before the string is closed
     if (_isAtEnd) {
       _errorHandler?.emit(
-        ScanError(_line, 'Unterminated string.'),
+        UnterminatedStringError(
+          location: ScanLocation(
+            offset: _current,
+            line: _line,
+            column: _column,
+          ),
+        ),
       );
+    } else {
+      // Advance to the closing quotes (")
+      _advance();
+
+      // Get the content between the quotes
+      final text = _source.substring(_start + 1, _current - 1);
+      _addToken(TokenType.string, text);
     }
-
-    // Advance to the closing quotes (")
-    _advance();
-
-    // Get the content between the quotes
-    final text = _source.substring(_start + 1, _current - 1);
-    _addToken(TokenType.string, text);
   }
 
   void _number() {

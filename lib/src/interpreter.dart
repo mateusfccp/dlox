@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:io' as io;
 
 import 'builtin_functions/clock.dart';
 import 'callable.dart';
@@ -16,7 +16,11 @@ import 'token.dart';
 /// A Lox interpreter.
 final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<void> {
   /// Creates a Lox interpreter.
-  Interpreter({ErrorHandler? errorHandler}) : _errorHandler = errorHandler;
+  Interpreter({
+    ErrorHandler? errorHandler,
+    io.IOSink? stdout,
+  })  : _errorHandler = errorHandler,
+        _stdout = stdout ?? io.stdout;
 
   late Environment _environment = globalEnvironment;
 
@@ -32,6 +36,7 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
   final _locals = <Expression, int>{};
 
   final ErrorHandler? _errorHandler;
+  final io.IOSink _stdout;
 
   /// Interpret a Lox program.
   ///
@@ -65,22 +70,31 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
   Object? visitBinaryExpression(BinaryExpression expression) {
     final left = _evaluate(expression.left);
     final right = _evaluate(expression.right);
+    final operator = expression.operator;
 
-    return switch ((expression.operator.type, left, right)) {
+    return switch ((operator.type, left, right)) {
+      (TokenType.bangEqual, _, _) => left != right, // TODO(mateusfccp): Check if this is valid, as the implementation differs from the Java version from the book
+      (TokenType.equalEqual, _, _) => left == right, // TODO(mateusfccp): Check if this is valid, as the implementation differs from the Java version from the book
       (TokenType.greater, double left, double right) => left > right,
       (TokenType.greaterEqual, double left, double right) => left >= right,
       (TokenType.less, double left, double right) => left < right,
       (TokenType.lessEqual, double left, double right) => left <= right,
-      (TokenType.bangEqual, _, _) => left != right, // TODO(mateusfccp): Check if this is valid, as the implementation differs from the Java version from the book
-      (TokenType.equalEqual, _, _) => left == right, // TODO(mateusfccp): Check if this is valid, as the implementation differs from the Java version from the book
-      (TokenType.minus, double left, double right) => (left) - (right),
+      (TokenType.minus, double left, double right) => left - right,
       (TokenType.plus, double left, double right) => left + right,
-      (TokenType.plus, String left, String right) => left + right,
-      (TokenType.plus, _, _) => throw RuntimeError(expression.operator, 'Operands must be two numbers or two strings. Got'),
-      (TokenType.slash, double left, double right) => (left) / (right),
-      (TokenType.asterisk, double left, double right) => (left) * (right),
+      (TokenType.plus, String left, String right) => '$left$right',
+      (TokenType.slash, double left, double right) => left / right,
+      (TokenType.asterisk, double left, double right) => left * right,
+      (TokenType.plus, final left, final right) => throw InvalidOperandsForPlusOperatorError(
+          token: operator,
+          left: left,
+          right: right,
+        ),
       (TokenType.greater || TokenType.greaterEqual || TokenType.less || TokenType.lessEqual || TokenType.minus || TokenType.slash || TokenType.asterisk, _, _) =>
-        throw RuntimeError(expression.operator, 'Operands must be numbers!'),
+        throw InvalidOperandsForNumericBinaryOperatorsError(
+          token: operator,
+          left: left,
+          right: right,
+        ),
       _ => null,
     };
   }
@@ -94,9 +108,16 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
     ];
 
     if (callee is! Callable) {
-      throw RuntimeError(expression.parenthesis, 'Can only call functions and classes.');
+      throw NonRoutineCalledError(
+        token: expression.parenthesis,
+        callee: callee,
+      );
     } else if (arguments.length != callee.arity) {
-      throw RuntimeError(expression.parenthesis, 'Expected ${callee.arity} arguments but got ${arguments.length}.');
+      throw ArityError(
+        token: expression.parenthesis,
+        arity: callee.arity,
+        argumentsCount: arguments.length,
+      );
     } else {
       return callee.call(this, arguments);
     }
@@ -109,7 +130,10 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
     if (object is Instance) {
       return object.get(expression.name);
     } else {
-      throw RuntimeError(expression.name, 'Only instances have properties. Got a ${object.runtimeType}.');
+      throw NonInstanceTriedToGetFieldError(
+        token: expression.name,
+        caller: object,
+      );
     }
   }
 
@@ -123,10 +147,12 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
   Object? visitLogicalExpression(LogicalExpression expression) {
     final left = _evaluate(expression.left);
 
-    if ((expression.operator.type == TokenType.andKeyword && _isTruthy(left)) || //
-        (expression.operator.type == TokenType.orKeyword && !_isTruthy(left))) return left;
-
-    return _evaluate(expression.right);
+    return switch ((expression.operator.type, _isTruthy(left))) {
+      (TokenType.andKeyword, false) || //
+      (TokenType.orKeyword, true) =>
+        left,
+      _ => _evaluate(expression.right),
+    };
   }
 
   @override
@@ -140,24 +166,22 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
 
       return value;
     } else {
-      throw RuntimeError(expression.name, 'Only instances have fields. Got a ${object.runtimeType}.');
+      throw NonInstanceTriedToSetFieldError(
+        token: expression.name,
+        caller: object,
+      );
     }
   }
 
   @override
   Object? visitSuperExpression(SuperExpression expression) {
-    final distance = _locals[expression];
-
-    if (distance == null) {
-      throw RuntimeError(expression.method, "'${expression.method.lexeme}' method has no access to 'super'. Are you sure the class has a superclass?");
-    }
-
-    final superclass = _environment.getAt(distance, 'super') as Class; // TODO(mateusfccp): avoid cast
-    final object = _environment.getAt(distance - 1, 'this') as Instance; // TODO(mateusfccp): avoid cast
+    final distance = _locals[expression]!; // This is suposedly guaranteed to be non-null because the resolver already checks for super calls in class that have not a supertype
+    final superclass = _environment.getAt(distance, 'super') as Class;
+    final object = _environment.getAt(distance - 1, 'this') as Instance;
     final method = superclass.findMethod(expression.method.lexeme);
 
     if (method == null) {
-      throw RuntimeError(expression.method, "Undefined property '${expression.method.lexeme}'.");
+      throw UndefinedPropertyError(expression.method);
     } else {
       return method.bind(object);
     }
@@ -169,11 +193,15 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
   @override
   Object? visitUnaryExpression(UnaryExpression expression) {
     final right = _evaluate(expression.right);
+    final operator = expression.operator;
 
-    return switch (expression.operator.type) {
+    return switch (operator.type) {
       TokenType.bang => !_isTruthy(right),
       TokenType.minus when right is double => -right,
-      TokenType.minus => throw RuntimeError(expression.operator, 'Operand must be a number!'),
+      TokenType.minus => throw InvalidOperandForUnaryMinusOperatorError(
+          token: operator,
+          right: right,
+        ),
       _ => null,
     };
   }
@@ -229,10 +257,7 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
       if (_evaluate(potentialSuperclass) case final Class evaluatedSuperclass) {
         superclass = evaluatedSuperclass;
       } else {
-        throw RuntimeError(
-          potentialSuperclass.name,
-          'Superclass must be a class',
-        );
+        throw ClassInheritsFromANonClassError(potentialSuperclass.name);
       }
     } else {
       superclass = null;
@@ -296,7 +321,7 @@ final class Interpreter implements ExpressionVisitor<Object?>, StatementVisitor<
   @override
   void visitPrintStatement(PrintStatement statement) {
     final value = _evaluate(statement.expression);
-    stdout.writeln(_stringify(value));
+    _stdout.writeln(_stringify(value));
   }
 
   @override

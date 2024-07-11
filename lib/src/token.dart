@@ -8,6 +8,7 @@ final class Token {
     required this.type,
     required this.lexeme,
     required this.line,
+    required this.column,
     this.literal,
   });
 
@@ -19,6 +20,9 @@ final class Token {
 
   /// The line in which the token was scanned.
   final int line;
+
+  /// The column in which the token was scanned.
+  final int column;
 
   /// The literal represented by the token.
   ///
@@ -146,5 +150,50 @@ enum TokenType {
   whileKeyword,
 
   /// The end-of-file token.
-  endOfFile,
+  endOfFile;
+
+  @override
+  String toString() {
+    return switch (this) {
+      leftParenthesis => '(',
+      rightParenthesis => ')',
+      leftBrace => '{',
+      rightBrace => '}',
+      comma => ',',
+      dot => '.',
+      minus => '-',
+      plus => '+',
+      semicolon => ';',
+      slash => '/',
+      asterisk => '*',
+      bang => '!',
+      bangEqual => '!=',
+      equal => '=',
+      equalEqual => '!=',
+      greater => '>',
+      greaterEqual => '>=',
+      less => '<',
+      lessEqual => '<=',
+      identifier => 'identifier',
+      string => 'string',
+      number => 'number literal',
+      andKeyword => 'and',
+      classKeyword => 'class',
+      elseKeyword => 'else',
+      falseKeyword => 'false',
+      funKeyword => 'fun',
+      forKeyword => 'for',
+      ifKeyword => 'if',
+      nilKeyword => 'nil',
+      orKeyword => 'or',
+      printKeyword => 'print',
+      returnKeyword => 'return',
+      superKeyword => 'super',
+      thisKeyword => 'this',
+      trueKeyword => 'true',
+      varKeyword => 'var',
+      whileKeyword => 'while',
+      endOfFile => 'EOF',
+    };
+  }
 }

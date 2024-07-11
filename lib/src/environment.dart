@@ -33,7 +33,7 @@ final class Environment {
     } else if (enclosing case final enclosing?) {
       return enclosing.get(name);
     } else {
-      throw RuntimeError(name, "Undefined variable '${name.lexeme}'.");
+      throw UndefinedVariableError(name);
     }
   }
 
@@ -51,7 +51,7 @@ final class Environment {
     } else if (enclosing case final enclosing?) {
       enclosing.assign(name, value);
     } else {
-      throw RuntimeError(name, "Undefined variable '${name.lexeme}'.");
+      throw UndefinedVariableError(name);
     }
   }
 

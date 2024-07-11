@@ -11,4 +11,5 @@ export 'src/resolver.dart';
 export 'src/routine.dart';
 export 'src/routine_type.dart';
 export 'src/scanner.dart';
+export 'src/statement.dart';
 export 'src/token.dart';

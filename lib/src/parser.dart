@@ -18,12 +18,6 @@ final class Parser {
 
   int _current = 0;
 
-  ParseError _error(Token token, String message) {
-    final error = ParseError(token, message);
-    _errorHandler?.emit(error);
-    return error;
-  }
-
   Token get _previous => _tokens[_current - 1];
 
   Token get _peek => _tokens[_current];
@@ -59,11 +53,12 @@ final class Parser {
     return _previous;
   }
 
-  Token _consume(TokenType type, String message) {
+  Token _consume(TokenType type, ParseError error) {
     if (_check(type)) {
       return _advance();
     } else {
-      throw _error(_peek, message);
+      _errorHandler?.emit(error);
+      throw error;
     }
   }
 
@@ -128,17 +123,45 @@ final class Parser {
   }
 
   Statement _class() {
-    final name = _consume(TokenType.identifier, 'Expect class name.');
+    final name = _consume(
+      TokenType.identifier,
+      ExpectError(
+        token: _peek,
+        expectation: TokenExpectation(
+          token: TokenType.identifier,
+          description: 'class name',
+        ),
+      ),
+    );
     final VariableExpression? superclass;
 
     if (_match(TokenType.less)) {
-      _consume(TokenType.identifier, 'Expect superclas name.');
+      _consume(
+        TokenType.identifier,
+        ExpectError(
+          token: _peek,
+          expectation: TokenExpectation(
+            token: TokenType.identifier,
+            description: 'superclass name',
+          ),
+        ),
+      );
       superclass = VariableExpression(_previous);
     } else {
       superclass = null;
     }
 
-    _consume(TokenType.leftBrace, "Expect '{' after class name.");
+    _consume(
+      TokenType.leftBrace,
+      ExpectAfterError(
+        token: _peek,
+        expectation: TokenExpectation(token: TokenType.leftBrace),
+        after: TokenExpectation(
+          token: TokenType.identifier,
+          description: 'class name',
+        ),
+      ),
+    );
 
     final methods = <FunctionStatement>[];
 
@@ -146,7 +169,23 @@ final class Parser {
       methods.add(_function(RoutineType.method));
     }
 
-    _consume(TokenType.rightBrace, "Expect '}' after class body.");
+    _consume(
+      TokenType.rightBrace,
+      ExpectAfterError(
+        token: _peek,
+        expectation: TokenExpectation(token: TokenType.rightBrace),
+        after: methods.isEmpty //
+            ? TokenExpectation(
+                token: TokenType.leftBrace,
+                description: 'class body',
+              )
+            : StatementExpectation(
+                statement: methods.last,
+                description: 'class body',
+              ),
+      ),
+    );
+
     return ClassStatement(
       name,
       superclass,
@@ -155,7 +194,14 @@ final class Parser {
   }
 
   Statement _forStatement() {
-    _consume(TokenType.leftParenthesis, "Expect '(' after 'for'.");
+    _consume(
+      TokenType.leftParenthesis,
+      ExpectAfterError(
+        token: _peek,
+        expectation: ExpectationType.token(token: TokenType.leftParenthesis),
+        after: TokenExpectation(token: TokenType.forKeyword),
+      ),
+    );
 
     final Statement? initializer;
     if (_match(TokenType.semicolon)) {
@@ -172,7 +218,17 @@ final class Parser {
     } else {
       condition = _expression();
     }
-    _consume(TokenType.semicolon, "Expect ';' after loop condition.");
+
+    _consume(
+      TokenType.semicolon,
+      ExpectAfterError(
+        token: _peek,
+        expectation: ExpectationType.token(token: TokenType.semicolon),
+        after: condition == null //
+            ? TokenExpectation(token: TokenType.semicolon, description: 'loop condition')
+            : ExpressionExpectation(expression: condition, description: 'loop condition'),
+      ),
+    );
 
     final Expression? increment;
     if (_check(TokenType.rightParenthesis)) {
@@ -181,7 +237,16 @@ final class Parser {
       increment = _expression();
     }
 
-    _consume(TokenType.rightParenthesis, "Expect ')' after for clauses.");
+    _consume(
+      TokenType.rightParenthesis,
+      ExpectAfterError(
+        token: _peek,
+        expectation: ExpectationType.token(token: TokenType.rightParenthesis),
+        after: increment == null //
+            ? TokenExpectation(token: TokenType.semicolon, description: 'for clauses')
+            : ExpressionExpectation(expression: increment, description: 'for clauses'),
+      ),
+    );
 
     final body = _statement();
 
@@ -198,9 +263,25 @@ final class Parser {
   }
 
   Statement _ifStatement() {
-    _consume(TokenType.leftParenthesis, "Expect '(' after 'if'.");
+    _consume(
+      TokenType.leftParenthesis,
+      ExpectAfterError(
+        token: _peek,
+        expectation: ExpectationType.token(token: TokenType.leftParenthesis),
+        after: TokenExpectation(token: TokenType.ifKeyword),
+      ),
+    );
+
     final condition = _expression();
-    _consume(TokenType.rightParenthesis, "Expect ')' after if condition.");
+
+    _consume(
+      TokenType.rightParenthesis,
+      ExpectAfterError(
+        token: _peek,
+        expectation: ExpectationType.token(token: TokenType.rightParenthesis),
+        after: ExpressionExpectation(expression: condition, description: 'if condition'),
+      ),
+    );
 
     final thenBranch = _statement();
 
@@ -217,7 +298,14 @@ final class Parser {
 
   Statement _printStatement() {
     final value = _expression();
-    _consume(TokenType.semicolon, "Expect ';' after value.");
+    _consume(
+      TokenType.semicolon,
+      ExpectAfterError(
+        token: _peek,
+        expectation: ExpectationType.token(token: TokenType.semicolon),
+        after: ExpressionExpectation(expression: value, description: 'value'),
+      ),
+    );
     return PrintStatement(value);
   }
 
@@ -231,60 +319,153 @@ final class Parser {
       value = _expression();
     }
 
-    _consume(TokenType.semicolon, "Expect ';' after return value.");
+    _consume(
+      TokenType.semicolon,
+      ExpectAfterError(
+        token: _peek,
+        expectation: ExpectationType.token(token: TokenType.semicolon),
+        after: value == null //
+            ? TokenExpectation(token: TokenType.returnKeyword, description: 'return value')
+            : ExpressionExpectation(expression: value, description: 'return value'),
+      ),
+    );
 
     return ReturnStatement(keyword, value);
   }
 
   Statement _variableDeclaration() {
-    final name = _consume(TokenType.identifier, 'Expect variable name.');
+    final name = _consume(
+      TokenType.identifier,
+      ExpectError(
+        token: _peek,
+        expectation: ExpectationType.token(
+          token: TokenType.identifier,
+          description: 'variable name',
+        ),
+      ),
+    );
 
     final Expression? initializer;
+
     if (_match(TokenType.equal)) {
       initializer = _expression();
     } else {
       initializer = null;
     }
 
-    _consume(TokenType.semicolon, "Expect ';' after variable declaration");
+    _consume(
+      TokenType.semicolon,
+      ExpectAfterError(
+        token: _peek,
+        expectation: ExpectationType.token(token: TokenType.semicolon),
+        after: initializer == null //
+            ? TokenExpectation(token: TokenType.identifier, description: 'variable declaration')
+            : ExpressionExpectation(expression: initializer, description: 'variable declaration'),
+      ),
+    );
+
     return VariableStatement(name, initializer);
   }
 
   Statement _whileStatement() {
-    _consume(TokenType.leftParenthesis, "Expect '(' after 'while'.");
+    _consume(
+      TokenType.leftParenthesis,
+      ExpectAfterError(
+        token: _peek,
+        expectation: ExpectationType.token(token: TokenType.leftParenthesis),
+        after: TokenExpectation(token: TokenType.whileKeyword),
+      ),
+    );
+
     final condition = _expression();
-    _consume(TokenType.rightParenthesis, "Expect ')' after while condition.");
+
+    _consume(
+      TokenType.rightParenthesis,
+      ExpectAfterError(
+        token: _peek,
+        expectation: ExpectationType.token(token: TokenType.rightParenthesis),
+        after: ExpressionExpectation(expression: condition, description: 'while condition'),
+      ),
+    );
 
     return WhileStatement(condition, _statement());
   }
 
   Statement _expressionStatement() {
     final expression = _expression();
-    _consume(TokenType.semicolon, "Expect ';' after expression");
+    _consume(
+      TokenType.semicolon,
+      ExpectAfterError(
+        token: _peek,
+        expectation: ExpectationType.token(token: TokenType.semicolon),
+        after: ExpressionExpectation(expression: expression),
+      ),
+    );
+
     return ExpressionStatement(expression);
   }
 
   FunctionStatement _function(RoutineType functionType) {
-    final name = _consume(TokenType.identifier, 'Expect $functionType name.');
+    final name = _consume(
+      TokenType.identifier,
+      ExpectError(
+        token: _peek,
+        expectation: ExpectationType.token(
+          token: TokenType.identifier,
+          description: '$functionType name',
+        ),
+      ),
+    );
     final parameters = <Token>[];
-    _consume(TokenType.leftParenthesis, '');
+    _consume(
+      TokenType.leftParenthesis,
+      ExpectError(
+        token: _peek,
+        expectation: ExpectationType.token(token: TokenType.leftParenthesis),
+      ),
+    );
 
     if (!_check(TokenType.rightParenthesis)) {
       do {
         if (parameters.length >= 255) {
           _errorHandler?.emit(
-            ParseError(_peek, "Can't have more than 255 parameters."),
+            ParametersLimitError(token: _peek),
           );
         }
 
         parameters.add(
-          _consume(TokenType.identifier, 'Expect parameter name.'),
+          _consume(
+            TokenType.identifier,
+            ExpectError(
+              token: _peek,
+              expectation: ExpectationType.token(
+                token: TokenType.identifier,
+                description: 'parameter name',
+              ),
+            ),
+          ),
         );
       } while (_match(TokenType.comma));
     }
 
-    _consume(TokenType.rightParenthesis, '');
-    _consume(TokenType.leftBrace, "Expect '{' before $functionType body.");
+    _consume(
+      TokenType.rightParenthesis,
+      ExpectError(
+        token: _peek,
+        expectation: ExpectationType.token(token: TokenType.rightParenthesis),
+      ),
+    );
+    _consume(
+      TokenType.leftBrace,
+      ExpectBeforeError(
+        token: _peek,
+        expectation: ExpectationType.token(token: TokenType.leftBrace),
+        before: StatementExpectation(
+          statement: BlockStatement([]), // TODO(mateusfccp): Review this
+          description: '$functionType body',
+        ),
+      ),
+    );
 
     return FunctionStatement(name, parameters, _block());
   }
@@ -300,7 +481,18 @@ final class Parser {
       }
     }
 
-    _consume(TokenType.rightBrace, "Expect '}' after block.");
+    _consume(
+      TokenType.rightBrace,
+      ExpectAfterError(
+        token: _peek,
+        expectation: ExpectationType.token(token: TokenType.rightBrace),
+        after: StatementExpectation(
+          // TODO(mateufccp): Review this
+          statement: BlockStatement(statements),
+          description: 'block',
+        ),
+      ),
+    );
     return statements;
   }
 
@@ -317,7 +509,7 @@ final class Parser {
         return SetExpression(expression.object, expression.name, value);
       } else {
         _errorHandler?.emit(
-          ParseError(equals, "Invalid assignment target."),
+          InvalidAssignmentTargetError(token: equals),
         );
       }
     }
@@ -418,14 +610,27 @@ final class Parser {
       do {
         if (arguments.length >= 255) {
           _errorHandler?.emit(
-            ParseError(_peek, "Can't have more than 255 arguments"),
+            ArgumentsLimitError(token: _peek),
           );
         }
         arguments.add(_expression());
       } while (_match(TokenType.comma));
     }
 
-    final parenthesis = _consume(TokenType.rightParenthesis, "Expect ')' after arguments.");
+    final parenthesis = _consume(
+      TokenType.rightParenthesis,
+      ExpectAfterError(
+        token: _peek,
+        expectation: ExpectationType.token(token: TokenType.rightParenthesis),
+        after: TokenExpectation(
+          token: arguments.isEmpty //
+              ? TokenType.leftParenthesis
+              : TokenType.identifier,
+          description: 'arguments',
+        ),
+      ),
+    );
+
     return CallExpression(callee, parenthesis, arguments);
   }
 
@@ -436,7 +641,17 @@ final class Parser {
       if (_match(TokenType.leftParenthesis)) {
         expression = _finishCall(expression);
       } else if (_match(TokenType.dot)) {
-        final name = _consume(TokenType.identifier, "Expect property name after '.'.");
+        final name = _consume(
+          TokenType.identifier,
+          ExpectAfterError(
+            token: _peek,
+            expectation: ExpectationType.token(
+              token: TokenType.identifier,
+              description: 'property name',
+            ),
+            after: TokenExpectation(token: TokenType.comma),
+          ),
+        );
         expression = GetExpression(expression, name);
       } else {
         break;
@@ -457,9 +672,25 @@ final class Parser {
       return LiteralExpression(_previous.literal);
     } else if (_match(TokenType.superKeyword)) {
       final keyword = _previous;
-      _consume(TokenType.dot, "Expect '.' after super.");
+      _consume(
+        TokenType.dot,
+        ExpectAfterError(
+          token: _peek,
+          expectation: ExpectationType.token(token: TokenType.dot),
+          after: TokenExpectation(token: TokenType.superKeyword),
+        ),
+      );
 
-      final method = _consume(TokenType.identifier, 'Expect superclass method name.');
+      final method = _consume(
+        TokenType.identifier,
+        ExpectError(
+          token: _peek,
+            expectation: ExpectationType.token(
+              token: TokenType.identifier,
+              description: 'superclass method name',
+            )
+        ),
+      );
 
       return SuperExpression(keyword, method);
     } else if (_match(TokenType.thisKeyword)) {
@@ -468,10 +699,22 @@ final class Parser {
       return VariableExpression(_previous);
     } else if (_match(TokenType.leftParenthesis)) {
       final expression = _expression();
-      _consume(TokenType.rightParenthesis, "Expect ')' after expression.");
+      _consume(
+        TokenType.rightParenthesis,
+        ExpectAfterError(
+          token: _peek,
+          expectation: ExpectationType.token(token: TokenType.rightParenthesis),
+          after: ExpressionExpectation(expression: expression),
+        ),
+      );
+
       return GroupingExpression(expression);
     } else {
-      final error = ParseError(_peek, 'Expect expression.');
+      final error = ExpectError(
+        token: _peek,
+        expectation: ExpectationType.expression(),
+      );
+
       _errorHandler?.emit(error);
       throw error;
     }

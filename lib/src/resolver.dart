@@ -56,7 +56,7 @@ final class Resolver implements ExpressionVisitor<void>, StatementVisitor<void> 
 
       if (scope.containsKey(name.lexeme)) {
         _errorHandler?.emit(
-          ParseError(name, "There's already a variable with this name in this scope."), // TODO(mateusfccp); again, see if we should have a ResolveError
+          VariableAlreadyInScopeError(name),
         );
       }
 
@@ -97,7 +97,7 @@ final class Resolver implements ExpressionVisitor<void>, StatementVisitor<void> 
     if (statement.superclass case final superclass?) {
       if (statement.name.lexeme == superclass.name.lexeme) {
         _errorHandler?.emit(
-          ParseError(superclass.name, "A class can't inherit from itself."), // TODO(mateusfccp): resolve error
+          ClassInheritsFromItselfError(superclass.name),
         );
       }
 
@@ -158,17 +158,17 @@ final class Resolver implements ExpressionVisitor<void>, StatementVisitor<void> 
   void visitReturnStatement(ReturnStatement statement) {
     if (_currentFunction == null) {
       _errorHandler?.emit(
-        ParseError(statement.keyword, "Can't return from top-level code."), // TODO(mateusfccp): ResolveError
+        ReturnUsedOnTopLevelError(statement.keyword),
       );
     }
 
     if (statement.value case final value?) {
       if (_currentFunction == RoutineType.initializer) {
         _errorHandler?.emit(
-          ParseError(
-            statement.keyword,
-            "Can't return a value form an initializer.",
-          ), // TODO(mateusfccp): Resolve error daba daba
+          ClassInitializerReturnsValueError(
+            token: statement.keyword,
+            value: value,
+          ),
         );
       }
 
@@ -237,17 +237,11 @@ final class Resolver implements ExpressionVisitor<void>, StatementVisitor<void> 
   void visitSuperExpression(SuperExpression expression) {
     if (_currentClass == null) {
       _errorHandler?.emit(
-        ParseError(
-          expression.keyword,
-          "Can't use 'super' outside of a class.",
-        ),
+        SuperUsedOutsideOfClassError(expression.keyword),
       );
     } else if (_currentClass == ClassType.class_) {
       _errorHandler?.emit(
-        ParseError(
-          expression.keyword,
-          "Can't use 'super' in a class with no superclass.",
-        ),
+        SuperUsedInAClassWithoutSuperclassError(expression.keyword),
       );
     } else {
       _resolveLocal(expression, expression.keyword);
@@ -258,11 +252,8 @@ final class Resolver implements ExpressionVisitor<void>, StatementVisitor<void> 
   void visitThisExpression(ThisExpression expression) {
     if (_currentClass == null) {
       _errorHandler?.emit(
-        ParseError(
-          expression.keyword,
-          "Can't use 'this' outside of a class.",
-        ),
-      ); // TODO(mateusfccp) Resolver error
+        ThisUsedOutsideOfClassError(expression.keyword),
+      );
     } else {
       _resolveLocal(expression, expression.keyword);
     }
@@ -275,7 +266,7 @@ final class Resolver implements ExpressionVisitor<void>, StatementVisitor<void> 
   void visitVariableExpression(VariableExpression expression) {
     if (_scopes.isNotEmpty && _scopes.last[expression.name.lexeme] == false) {
       _errorHandler?.emit(
-        ParseError(expression.name, "Can't read local variable in its own initializer."), // TOOD(mateusfccp): Provide resolving error?
+        VariableInitializerReadsItselfError(expression.name),
       );
     }
 

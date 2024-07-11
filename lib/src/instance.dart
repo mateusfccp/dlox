@@ -22,7 +22,7 @@ final class Instance {
     } else if (_class.findMethod(name.lexeme) case final method?) {
       return method.bind(this);
     } else {
-      throw RuntimeError(name, "Undefined property '${name.lexeme}'.");
+      throw UndefinedPropertyError(name);
     }
   }
 
