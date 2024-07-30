@@ -27,6 +27,7 @@ final class Scanner {
     'for': TokenType.forKeyword,
     'fun': TokenType.funKeyword,
     'if': TokenType.ifKeyword,
+    'unless': TokenType.unlessKeyword,
     'nil': TokenType.nilKeyword,
     'or': TokenType.orKeyword,
     'print': TokenType.printKeyword,

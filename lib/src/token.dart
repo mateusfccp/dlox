@@ -122,6 +122,9 @@ enum TokenType {
   /// The `if` keyword token.
   ifKeyword,
 
+  /// The `unless` keyword token.
+  unlessKeyword,
+
   /// The `nil` keyword token.
   nilKeyword,
 
@@ -184,6 +187,7 @@ enum TokenType {
       funKeyword => 'fun',
       forKeyword => 'for',
       ifKeyword => 'if',
+      unlessKeyword => 'unless',
       nilKeyword => 'nil',
       orKeyword => 'or',
       printKeyword => 'print',

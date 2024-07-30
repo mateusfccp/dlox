@@ -109,6 +109,8 @@ final class Parser {
       return _forStatement();
     } else if (_match(TokenType.ifKeyword)) {
       return _ifStatement();
+    } else if (_match(TokenType.unlessKeyword)) {
+      return _unlessStatement();
     } else if (_match(TokenType.printKeyword)) {
       return _printStatement();
     } else if (_match(TokenType.returnKeyword)) {
@@ -294,6 +296,51 @@ final class Parser {
     }
 
     return IfStatement(condition, thenBranch, elseBranch);
+  }
+
+  Statement _unlessStatement() {
+    _consume(
+      TokenType.leftParenthesis,
+      ExpectAfterError(
+        token: _peek,
+        expectation: ExpectationType.token(token: TokenType.leftParenthesis),
+        after: TokenExpectation(token: TokenType.ifKeyword),
+      ),
+    );
+
+    final condition = _expression();
+
+    _consume(
+      TokenType.rightParenthesis,
+      ExpectAfterError(
+        token: _peek,
+        expectation: ExpectationType.token(token: TokenType.rightParenthesis),
+        after: ExpressionExpectation(expression: condition, description: 'if condition'),
+      ),
+    );
+
+    final thenBranch = _statement();
+
+    final Statement? elseBranch;
+
+    if (_match(TokenType.elseKeyword)) {
+      elseBranch = _statement();
+    } else {
+      elseBranch = null;
+    }
+
+    final negationToken = Token(
+      column: 0, // Not ideal, but shouldn't be a problem
+      line: 0, // Not ideal, but shouldn't be a problem
+      lexeme: '!',
+      type: TokenType.bang,
+    );
+
+    return IfStatement(
+      UnaryExpression(negationToken, condition),
+      thenBranch,
+      elseBranch,
+    );
   }
 
   Statement _printStatement() {
@@ -684,12 +731,11 @@ final class Parser {
       final method = _consume(
         TokenType.identifier,
         ExpectError(
-          token: _peek,
+            token: _peek,
             expectation: ExpectationType.token(
               token: TokenType.identifier,
               description: 'superclass method name',
-            )
-        ),
+            )),
       );
 
       return SuperExpression(keyword, method);

@@ -42,7 +42,7 @@ After I implement all the proposed code in the book (i.e. up to chapter 13), I a
 
 ### Intended features not proposed by the book
 
-- [ ] `unless` control flow (syntax sugar)
+- [x] `unless` control flow (syntax sugar)
 - [ ] `do-while` control flow (syntax sugar) 
 
 ### Other intended improvements

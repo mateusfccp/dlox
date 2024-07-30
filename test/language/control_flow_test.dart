@@ -76,6 +76,46 @@ if (a)
     expect(stdout.writtenLines.single, '2');
   });
 
+  test("'unless' conditions should execute if the expression is untruthy.", () {
+    const program = '''
+var a = false;
+unless (a) print "1";
+
+a = true;
+unless (a) print "2";
+''';
+
+    interpretSource(
+      source: program,
+      errorHandler: errorHandler,
+      stdout: stdout,
+    );
+
+    expect(errorHandler.errors, isEmpty);
+    expect(stdout.writtenLines.single, '1');
+  });
+
+  test("'unless' conditions should execute the 'else' block if the expression is truthy.", () {
+    const program = '''
+var a = true;
+
+unless (a)
+  print "1";
+else
+  print "2";
+
+''';
+
+    interpretSource(
+      source: program,
+      errorHandler: errorHandler,
+      stdout: stdout,
+    );
+
+    expect(errorHandler.errors, isEmpty);
+    expect(stdout.writtenLines.single, '2');
+  });
+
   test('Logical operators short-cirtuit.', () {
     const program = '''
 fun sideEffect(n) {
