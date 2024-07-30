@@ -123,6 +123,22 @@ print unless;
 unless (unless != 0) {
   print "unless is 0";
 }
+
+fun unless(condition, body) {
+  unless (condition) {
+    body();
+  }
+}
+
+fun printBody() {
+  print("unless function");
+}
+
+unless (false) {
+  print("unless keyword");
+}
+
+unless(false, printBody);
 ''';
 
     interpretSource(
@@ -132,13 +148,14 @@ unless (unless != 0) {
     );
 
     expect(errorHandler.errors, isEmpty);
-    expect(stdout.writtenLines, hasLength(2));
     expect(
       stdout.writtenLines,
       containsAllInOrder(
         [
           '0',
           'unless is 0',
+          'unless keyword',
+          'unless function',
         ],
       ),
     );
