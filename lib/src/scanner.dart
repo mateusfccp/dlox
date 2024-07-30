@@ -93,9 +93,11 @@ final class Scanner {
         return _addToken(_match('=') ? TokenType.greaterEqual : TokenType.greater);
       case '/':
         if (_match('/')) {
-          while (_peek() != '\n' && !_isAtEnd) {
+          while (_peek != '\n' && !_isAtEnd) {
             _advance();
           }
+        } else if (_match('*')) {
+          _advanceUntilCommentEnd();
         } else {
           _addToken(TokenType.slash);
         }
@@ -145,6 +147,24 @@ final class Scanner {
     return _source[_current++];
   }
 
+  void _advanceUntilCommentEnd() {
+    int commentLevel = 1;
+
+    while (commentLevel > 0 && !_isAtEnd) {
+      if (_match('\n')) {
+        _line++;
+        _column = 0;
+        continue;
+      } else if (_match('/') && _peek == '*') {
+        commentLevel = commentLevel + 1;
+      } else if (_match('*') && _peek == '/') {
+        commentLevel = commentLevel - 1;
+      }
+
+      _advance();
+    }
+  }
+
   bool _match(String expected) {
     if (_isAtEnd || _source[_current] != expected) {
       return false;
@@ -155,9 +175,9 @@ final class Scanner {
     }
   }
 
-  String _peek() => _isAtEnd ? '\x00' : _source[_current];
+  String get _peek => _isAtEnd ? '\x00' : _source[_current];
 
-  String _peekNext() => _current + 1 >= _source.length ? '\x00' : _source[_current + 1];
+  String get _peekNext => _current + 1 >= _source.length ? '\x00' : _source[_current + 1];
 
   bool _isDigit(String character) {
     assert(character.length == 1);
@@ -176,8 +196,8 @@ final class Scanner {
 
   void _string() {
     // Consume all the characters until we find the closing quotes (")
-    while (_peek() != '"' && !_isAtEnd) {
-      if (_peek() == '\n') {
+    while (_peek != "\"" && !_isAtEnd) {
+      if (_peek == '\n') {
         _line++;
         _column = 0;
       }
@@ -207,16 +227,16 @@ final class Scanner {
 
   void _number() {
     // Consume all the digits before the dot or the end
-    while (_isDigit(_peek())) {
+    while (_isDigit(_peek)) {
       _advance();
     }
 
     // Look for a fractional part
-    if (_peek() == '.' && _isDigit(_peekNext())) {
+    if (_peek == '.' && _isDigit(_peekNext)) {
       // Consume the dot (.)
       _advance();
 
-      while (_isDigit(_peek())) {
+      while (_isDigit(_peek)) {
         _advance();
       }
     }
@@ -227,7 +247,7 @@ final class Scanner {
   }
 
   void _identifier() {
-    while (_isAlphanumeric(_peek())) {
+    while (_isAlphanumeric(_peek)) {
       _advance();
     }
 
@@ -237,7 +257,7 @@ final class Scanner {
 
     // We treat `unless` as a identifier unless (sic) it comes directly before
     // a left brackets, in which case we treat it as a keyword.
-    if (text == '${TokenType.unlessKeyword}' && _peekNext() != '(') {
+    if (text == '${TokenType.unlessKeyword}' && _peekNext != '(') {
       tokenType = TokenType.identifier;
     } else {
       tokenType = _keywords[text] ?? TokenType.identifier;

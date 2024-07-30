@@ -1,13 +1,16 @@
 import 'package:dlox/dlox.dart';
 import 'package:test/test.dart';
 
+import '../stdout_mock.dart';
 import '../utils.dart';
 
 void main() {
   late ErrorHandler errorHandler;
+  late StdoutMock stdout;
 
   setUp(() {
     errorHandler = ErrorHandler();
+    stdout = StdoutMock();
   });
 
   test('Unhandled tokens should return a scanning error.', () {
@@ -67,5 +70,68 @@ class MinhaClasse {
     expect(error.location.offset, 76);
     expect(error.location.line, 6);
     expect(error.location.column, 1);
+  });
+
+  test('Single-line comments should be ignored until the end of line.', () {
+    const program = '''
+print 1;
+// print 2;
+print 3;
+// print 4;
+''';
+
+    interpretSource(
+      source: program,
+      errorHandler: errorHandler,
+      stdout: stdout,
+    );
+
+    expect(errorHandler.errors, isEmpty);
+    expect(
+      stdout.writtenLines,
+      containsAllInOrder(['1', '3']),
+    );
+  });
+
+  test("Multi-line comments should be ignored until it's closed.", () {
+    const program = '''
+/*print 1;
+print 2;
+*/
+print 3;
+print 4;
+''';
+
+    interpretSource(
+      source: program,
+      errorHandler: errorHandler,
+      stdout: stdout,
+    );
+
+    expect(errorHandler.errors, isEmpty);
+    expect(
+      stdout.writtenLines,
+      containsAllInOrder(['3', '4']),
+    );
+  });
+
+  test("Multi-line comments can be nested.", () {
+    const program = '''
+/*/*print 1;
+print 2;
+*/
+print 3;
+*/
+print 4;
+''';
+
+    interpretSource(
+      source: program,
+      errorHandler: errorHandler,
+      stdout: stdout,
+    );
+
+    expect(errorHandler.errors, isEmpty);
+    expect(stdout.writtenLines.single, '4');
   });
 }
