@@ -232,7 +232,17 @@ final class Scanner {
     }
 
     final text = _source.substring(_start, _current);
-    final tokenType = _keywords[text] ?? TokenType.identifier;
+
+    final TokenType tokenType;
+
+    // We treat `unless` as a identifier unless (sic) it comes directly before
+    // a left brackets, in which case we treat it as a keyword.
+    if (text == '${TokenType.unlessKeyword}' && _peekNext() != '(') {
+      tokenType = TokenType.identifier;
+    } else {
+      tokenType = _keywords[text] ?? TokenType.identifier;
+    }
+
     _addToken(tokenType);
   }
 }

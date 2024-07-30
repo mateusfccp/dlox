@@ -63,7 +63,6 @@ if (a)
     print "1";
   else
     print "2";
-
 ''';
 
     interpretSource(
@@ -114,6 +113,35 @@ else
 
     expect(errorHandler.errors, isEmpty);
     expect(stdout.writtenLines.single, '2');
+  });
+
+  test("'unless' can be both a keyword and an identifier.", () {
+    const program = '''
+var unless = 0;
+print unless;
+
+unless (unless != 0) {
+  print "unless is 0";
+}
+''';
+
+    interpretSource(
+      source: program,
+      errorHandler: errorHandler,
+      stdout: stdout,
+    );
+
+    expect(errorHandler.errors, isEmpty);
+    expect(stdout.writtenLines, hasLength(2));
+    expect(
+      stdout.writtenLines,
+      containsAllInOrder(
+        [
+          '0',
+          'unless is 0',
+        ],
+      ),
+    );
   });
 
   test('Logical operators short-cirtuit.', () {
