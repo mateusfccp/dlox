@@ -304,7 +304,7 @@ final class Parser {
       ExpectAfterError(
         token: _peek,
         expectation: ExpectationType.token(token: TokenType.leftParenthesis),
-        after: TokenExpectation(token: TokenType.ifKeyword),
+        after: TokenExpectation(token: TokenType.unlessKeyword),
       ),
     );
 
@@ -315,7 +315,7 @@ final class Parser {
       ExpectAfterError(
         token: _peek,
         expectation: ExpectationType.token(token: TokenType.rightParenthesis),
-        after: ExpressionExpectation(expression: condition, description: 'if condition'),
+        after: ExpressionExpectation(expression: condition, description: 'unless condition'),
       ),
     );
 
