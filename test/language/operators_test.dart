@@ -94,14 +94,13 @@ print("foo" + "bar"); //foobar
 
   void testBinaryNumericOperator({
     required String operatorName,
-    required String operator,
     required String expectation,
     required TokenType operatorType,
   }) {
     test("The $operatorName operator can only have numeric operators.", () {
       final program = '''
-print(10 $operator 10); // Ok
-print("foo" $operator "bar"); // Error
+print(10 $operatorType 10); // Ok
+print("foo" $operatorType "bar"); // Error
 ''';
 
       interpretSource(
@@ -117,7 +116,7 @@ print("foo" $operator "bar"); // Error
       error as InvalidOperandsForNumericBinaryOperatorsError;
       expect(error.token.type, operatorType);
       expect(error.token.line, 2);
-      expect(error.token.column, 12 + operator.length);
+      expect(error.token.column, 12 + '$operatorType'.length);
       expect(error.left, 'foo');
       expect(error.right, 'bar');
     });
@@ -125,49 +124,42 @@ print("foo" $operator "bar"); // Error
 
   testBinaryNumericOperator(
     operatorName: 'minus',
-    operator: '-',
     expectation: '0',
     operatorType: TokenType.minus,
   );
 
   testBinaryNumericOperator(
     operatorName: 'asterisk',
-    operator: '*',
     expectation: '100',
     operatorType: TokenType.asterisk,
   );
 
   testBinaryNumericOperator(
     operatorName: 'slash',
-    operator: '/',
     expectation: '1',
     operatorType: TokenType.slash,
   );
 
   testBinaryNumericOperator(
     operatorName: 'greater than',
-    operator: '>',
     expectation: 'false',
     operatorType: TokenType.greater,
   );
 
   testBinaryNumericOperator(
     operatorName: 'greater than or equal to',
-    operator: '>=',
     expectation: 'true',
     operatorType: TokenType.greaterEqual,
   );
 
   testBinaryNumericOperator(
     operatorName: 'less than',
-    operator: '<',
     expectation: 'false',
     operatorType: TokenType.less,
   );
 
   testBinaryNumericOperator(
     operatorName: 'less than or equal to',
-    operator: '<=',
     expectation: 'true',
     operatorType: TokenType.lessEqual,
   );
