@@ -43,6 +43,30 @@ After I implement all the proposed code in the book (i.e. up to chapter 13), I a
 ### Intended features not proposed by the book
 
 - [x] `unless` control flow (syntax sugar)
+  - `unless` was implemented as a contextual keyword, so that the change is not breaking in relation to original Lox specification. This means that this is a valid program:
+  ```
+  var unless = 0;
+  
+  unless (unless != 0) {
+    print "Unless is 0!";
+  }
+  
+  fun unless(condition, body) {
+    unless (condition) {
+      body();
+    }
+  }
+  
+  fun printBody() {
+    print("Unless function.");
+  }
+  
+  unless (false) {
+    print("Unless keyword.");
+  }
+  
+  unless(false, printBody);
+  ```
 - [ ] `do-while` control flow (syntax sugar) 
 
 ### Other intended improvements
