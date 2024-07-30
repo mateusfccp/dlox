@@ -109,10 +109,12 @@ LoxError? run(String source) {
       // Runtime errors
       ArityError(:final arity, :final argumentsCount) => 'Expected $arity arguments but got $argumentsCount.',
       ClassInheritsFromANonClassError(:final token) => 'Superclass must be a class, but ${token.lexeme} is not a class.',
-      InvalidOperandsForNumericBinaryOperatorsError(:final token, :final left, :final right) => "The operands for the operator '${token.lexeme}' should be numeric. '$left' and/or '$right' is/are not numeric.",
+      InvalidOperandsForNumericBinaryOperatorsError(:final token, :final left, :final right) =>
+        "The operands for the operator '${token.lexeme}' should be numeric. '$left' and/or '$right' is/are not numeric.",
       InvalidOperandForUnaryMinusOperatorError(:final right) => "The operand for the unary minus operator should be a number. Got '$right'.",
-      InvalidOperandsForPlusOperatorError(:final token, :final left, :final right) => "The operands for the operator '${token.lexeme}' should be both numeric or both strings. '$left' and/or '$right' do(es) not fulfill this requirement.",
-      NonRoutineCalledError(:final callee) => "The expression '${callee}' can't be called. Only functions, methods and classes can be called.",
+      InvalidOperandsForPlusOperatorError(:final token, :final left, :final right) =>
+        "The operands for the operator '${token.lexeme}' should be both numeric or both strings. '$left' and/or '$right' do(es) not fulfill this requirement.",
+      NonRoutineCalledError(:final callee) => "The expression '$callee' can't be called. Only functions, methods and classes can be called.",
       NonInstanceTriedToGetFieldError(:final token, :final caller) || //
       NonInstanceTriedToSetFieldError(:final token, :final caller) =>
         "Only instances have fields. '${token.lexeme}', of type ${caller.runtimeType}, is not an instance of a class.",

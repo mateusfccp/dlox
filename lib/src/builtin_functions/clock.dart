@@ -6,8 +6,7 @@ final class ClockCallable implements Callable {
   int get arity => 0;
 
   @override
-  Object? call(Interpreter interpreter, List<Object?> arguments) =>
-      DateTime.now().microsecondsSinceEpoch / 1e+6;
+  Object? call(Interpreter interpreter, List<Object?> arguments) => DateTime.now().microsecondsSinceEpoch / 1e+6;
 
   @override
   String toString() => '<native function>';
