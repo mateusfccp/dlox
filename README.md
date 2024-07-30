@@ -1,6 +1,6 @@
 # dlox
 
-[![https://pub.dev/packages/dlox](https://img.shields.io/pub/v/dlox?include_prereleases)]([https://pub.dev/packages/dlox) [![https://www.gnu.org/licenses/gpl-3.0.en.html](https://img.shields.io/badge/license-GPLv3-blue)](./LICENSE)
+[![pub.dev version](https://img.shields.io/pub/v/dlox)](https://pub.dev/packages/dlox) [![License: GPLv3](https://img.shields.io/badge/license-GPLv3-blue)](./LICENSE)
 
 An implementation of the Lox language in Dart.
 
